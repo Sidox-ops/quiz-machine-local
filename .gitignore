@@ -1,0 +1,58 @@
+# macOS
+.DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+
+# Signing credentials and release outputs
+*.p12
+*.cer
+*.mobileprovision
+*.key
+release/
+dist/
+build-backend/
+firebase-debug.log
+.firebase/
+.firebaserc
+.coverage
+coverage/
+.pytest_cache/
+
+# Local runtime state and generated RAG data
+storage/*.json
+storage/*.log
+storage/standardized_corpora/
+!storage/.gitkeep
+
+# Study material is private by default. Reviewed, redistributable starter data
+# is explicitly allowed under data/reference/.
+data/local/
+data/private/
+data/**/*.json
+!data/reference/
+!data/reference/**/*.json
+
+# Flutter generated/build files
+flutter_app/.dart_tool/
+flutter_app/build/
+flutter_app/macos/
+flutter_app/windows/
+flutter_app/linux/
+flutter_app/android/
+flutter_app/ios/
+flutter_app/web/
+
+# IDE/project-local metadata
+flutter_app/.idea/
+flutter_app/*.iml
+.idea/
+.vscode/
+
+# Local Graphify index; useful for navigation, never versioned.
+graphify-out/

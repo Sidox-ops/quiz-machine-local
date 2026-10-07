@@ -1,0 +1,48 @@
+QUIZ MACHINE LOCAL — OPEN-SOURCE LICENCE AND PRIVACY NOTICE
+Version 2.0 — 7 October 2026
+
+OPEN-SOURCE LICENCE
+
+Copyright (C) 2026 Quiz Machine contributors.
+
+Quiz Machine Local is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by the
+Free Software Foundation, version 3 only.
+
+The software is provided without warranty, including without any implied
+warranty of merchantability or fitness for a particular purpose. You may convey
+copies under the AGPL-3.0-only terms. The complete licence is included as the
+LICENSE file with the source and binary distribution.
+
+You do not need to accept the licence merely to receive or run an unmodified
+copy. Modifying or redistributing the software is permitted only under the
+licence terms.
+
+Third-party packages, the Doto font, Ollama, and Ollama models remain subject to
+their own licences. The demonstration corpus is offered separately under CC0
+1.0. Microsoft names and marks belong to their respective owners.
+
+INDEPENDENT EDUCATIONAL TOOL
+
+Quiz Machine is not affiliated with, endorsed by, sponsored by, or an official
+product of Microsoft or any certification provider. It does not contain official
+exam questions and does not guarantee certification results.
+
+PRIVACY
+
+Quiz Machine requires no account and includes no advertising, analytics,
+telemetry, crash reporting, or publisher-operated API. Imported corpora,
+generated questions, answers, scores, settings, indexes, and Ollama responses
+are stored on your computer.
+
+The default configuration sends certification and objective search terms to the
+public Microsoft Learn MCP service. It does not intentionally send imported
+corpora, answers, scores, question-bank content, or personal identifiers there.
+
+The supported Ollama configuration uses its local API at 127.0.0.1. If you
+configure a remote Ollama endpoint, content sent to it is governed by that
+endpoint and your configuration.
+
+Uninstalling the application may leave local data behind. Delete the Quiz
+Machine application-data directory to remove imports, caches, questions,
+indexes, settings, and learning progress.

@@ -1,0 +1,30 @@
+name: ai103_quiz_ui
+description: Local Flutter UI for Quiz Machine Local.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  desktop_drop: ^0.8.4
+  file_selector: ^1.1.0
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  path_provider: ^2.1.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/legal/terms.txt
+    - assets/fonts/DOTO-OFL.txt
+  fonts:
+    - family: Doto
+      fonts:
+        - asset: assets/fonts/Doto.ttf
