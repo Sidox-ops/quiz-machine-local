@@ -221,7 +221,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
           if (diagnostics.modelSelectionLocked)
             const Padding(
               padding: EdgeInsets.only(top: AppSpacing.xs),
-              child: Text('Model selection is locked by AI103_LLM_MODEL.'),
+              child: Text(
+                'Model selection is locked by QUIZ_MACHINE_LLM_MODEL.',
+              ),
             ),
           if (diagnostics.usesMicrosoftLearn)
             _CheckRow(

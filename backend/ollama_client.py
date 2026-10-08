@@ -388,8 +388,8 @@ class OllamaClient:
     ) -> str:
         if self.selection_locked:
             raise OllamaError(
-                "The model is locked by AI103_LLM_MODEL. Change that environment "
-                "variable before selecting a model in the app."
+                "The model is locked by QUIZ_MACHINE_LLM_MODEL. Change that "
+                "environment variable before selecting a model in the app."
             )
         inventory = models if models is not None else self.list_model_details()
         selected = next((model for model in inventory if model.name == name), None)

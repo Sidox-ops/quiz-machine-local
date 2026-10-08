@@ -1,5 +1,5 @@
-import 'package:ai103_quiz_ui/features/quiz/data/quiz_repository.dart';
-import 'package:ai103_quiz_ui/features/quiz/domain/quiz_models.dart';
+import 'package:quiz_machine_local/features/quiz/data/quiz_repository.dart';
+import 'package:quiz_machine_local/features/quiz/domain/quiz_models.dart';
 
 class FakeQuizRepository implements QuizRepository {
   bool disposed = false;
@@ -20,6 +20,22 @@ class FakeQuizRepository implements QuizRepository {
           code: 'AI-103',
           title: 'Developing AI Apps and Agents on Azure',
           studyGuideUrl: 'https://learn.microsoft.com/ai-103',
+        ),
+        CertificationItem(
+          code: 'AI-200',
+          title: 'Developing AI Cloud Solutions on Azure',
+          studyGuideUrl: 'https://learn.microsoft.com/ai-200',
+        ),
+        CertificationItem(
+          code: 'AI-300',
+          title:
+              'Operationalizing Machine Learning and Generative AI Solutions',
+          studyGuideUrl: 'https://learn.microsoft.com/ai-300',
+        ),
+        CertificationItem(
+          code: 'AI-500',
+          title: 'Designing and Implementing Multi-Agent AI Solutions',
+          studyGuideUrl: 'https://learn.microsoft.com/ai-500',
         ),
       ],
       selectedCertificationCode: selected,

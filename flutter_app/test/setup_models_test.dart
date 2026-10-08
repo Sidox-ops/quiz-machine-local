@@ -1,4 +1,4 @@
-import 'package:ai103_quiz_ui/features/setup/domain/setup_models.dart';
+import 'package:quiz_machine_local/features/setup/domain/setup_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Map<String, dynamic> _diagnostics({required bool connectionChecked}) => {

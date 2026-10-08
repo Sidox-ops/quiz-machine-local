@@ -51,10 +51,10 @@ abstract final class LocalBackendManager {
       const [],
       environment: {
         ...Platform.environment,
-        'AI103_BACKEND_PORT': '$port',
-        'AI103_API_TOKEN': token,
-        'AI103_USER_DATA_DIR': corpusDirectory.path,
-        'AI103_STORAGE_DIR': storageDirectory.path,
+        'QUIZ_MACHINE_BACKEND_PORT': '$port',
+        'QUIZ_MACHINE_API_TOKEN': token,
+        'QUIZ_MACHINE_USER_DATA_DIR': corpusDirectory.path,
+        'QUIZ_MACHINE_STORAGE_DIR': storageDirectory.path,
       },
       mode: ProcessStartMode.normal,
     );

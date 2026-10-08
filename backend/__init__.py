@@ -1,1 +1,1 @@
-"""AI-103 local quiz backend."""
+"""Quiz Machine Local backend."""

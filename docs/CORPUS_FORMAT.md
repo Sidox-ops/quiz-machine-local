@@ -10,7 +10,7 @@ semantic index.
 ```markdown
 ---
 schema: quiz-machine-corpus/v1
-document_id: ai103-foundry-evaluation
+document_id: quiz-machine-foundry-evaluation
 certification_code: AI-103
 domain: Plan and manage an Azure AI solution
 title: Foundry evaluation notes
@@ -35,7 +35,7 @@ Required frontmatter fields:
 - `schema`: exactly `quiz-machine-corpus/v1`;
 - `document_id`: 3 to 80 lowercase letters, digits, dots, underscores or
   hyphens; it is also the stable local filename and must be unique;
-- `certification_code`: `AI-901`, `AI-103` or `AI-200`;
+- `certification_code`: `AI-901`, `AI-103`, `AI-200`, `AI-300` or `AI-500`;
 - `domain`: exactly one domain configured for that certification;
 - `title`: must exactly match the single level-1 heading in the body;
 - `language`: a short human-readable language code or name.

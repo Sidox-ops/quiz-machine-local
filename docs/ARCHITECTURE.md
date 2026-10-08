@@ -45,9 +45,10 @@ installation decision.
 
 The user confirms the model before Microsoft Learn preparation is tested. The
 choice is stored atomically in the local application-data settings file and can
-be changed later for future generations. `AI103_LLM_MODEL` overrides and locks
-that setting for managed launches. Active generation jobs reject model changes;
-already prepared sessions and validated question-bank entries are not rewritten.
+be changed later for future generations. `QUIZ_MACHINE_LLM_MODEL` overrides
+and locks that setting for managed launches. Active generation jobs reject
+model changes; already prepared sessions and validated question-bank entries
+are not rewritten.
 
 Neither onboarding nor `start.sh` pulls generation or embedding models. Missing
 requirements produce an actionable status and remain under the user's control.

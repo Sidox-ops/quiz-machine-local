@@ -1,4 +1,4 @@
-name: ai103_quiz_ui
+name: quiz_machine_local
 description: Local Flutter UI for Quiz Machine Local.
 publish_to: "none"
 version: 0.1.0+1

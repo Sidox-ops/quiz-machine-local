@@ -6,7 +6,7 @@ Quiz Machine Local uses the public Microsoft Learn MCP service by default to
 prepare a certification corpus. It never treats a raw search result as a trusted
 answer and never calls MCP while the learner is answering a prepared question.
 
-For AI-901, AI-103, or AI-200, the preparation job:
+For AI-901, AI-103, AI-200, AI-300, or AI-500, the preparation job:
 
 1. fetches the official study guide and derives its measured domains and
    objectives;
@@ -65,7 +65,7 @@ Set the following value before launch to use the legacy indexed AI-103 corpus
 without Microsoft Learn network access:
 
 ```dotenv
-AI103_KNOWLEDGE_PROVIDER=local
+QUIZ_MACHINE_KNOWLEDGE_PROVIDER=local
 ```
 
 The visual importer accepts one or more `quiz-machine-corpus/v1` Markdown files.

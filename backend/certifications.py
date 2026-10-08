@@ -58,6 +58,35 @@ CERTIFICATIONS = (
             "Secure, monitor, and troubleshoot Azure solutions",
         ),
     ),
+    LocalCertification(
+        code="AI-300",
+        title="Operationalizing Machine Learning and Generative AI Solutions",
+        study_guide_url=(
+            "https://learn.microsoft.com/credentials/certifications/"
+            "resources/study-guides/ai-300"
+        ),
+        domains=(
+            "Design and implement an MLOps infrastructure",
+            "Implement machine learning model lifecycle and operations",
+            "Design and implement a GenAIOps infrastructure",
+            "Implement generative AI quality assurance and observability",
+            "Optimize generative AI systems and model performance",
+        ),
+    ),
+    LocalCertification(
+        code="AI-500",
+        title="Designing and Implementing Multi-Agent AI Solutions",
+        study_guide_url=(
+            "https://learn.microsoft.com/credentials/certifications/"
+            "resources/study-guides/ai-500"
+        ),
+        domains=(
+            "Architect multi-agent solutions",
+            "Develop multi-agent solutions in Azure",
+            "Evaluate, optimize, and monitor multi-agent solutions",
+            "Secure, govern, and deploy multi-agent solutions",
+        ),
+    ),
 )
 
 _BY_CODE = {item.code: item for item in CERTIFICATIONS}

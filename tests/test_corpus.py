@@ -26,7 +26,7 @@ class _IncompleteEmbeddingClient:
 class CorpusTests(unittest.TestCase):
     markdown = """---
 schema: quiz-machine-corpus/v1
-document_id: ai103-evaluation-notes
+document_id: quiz-machine-evaluation-notes
 certification_code: AI-103
 domain: Plan and manage an Azure AI solution
 title: Evaluation notes

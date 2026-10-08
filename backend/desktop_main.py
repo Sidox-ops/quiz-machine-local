@@ -8,7 +8,7 @@ from backend.api import app
 
 
 def main() -> None:
-    port = int(os.getenv("AI103_BACKEND_PORT", "8000"))
+    port = int(os.getenv("QUIZ_MACHINE_BACKEND_PORT", "8000"))
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
 
 

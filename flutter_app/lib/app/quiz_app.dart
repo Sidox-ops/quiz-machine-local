@@ -8,12 +8,14 @@ import '../features/quiz/presentation/pages/quiz_page.dart';
 import '../features/setup/data/environment_repository.dart';
 import '../features/setup/presentation/onboarding_page.dart';
 
-class Ai103QuizApp extends StatefulWidget {
-  const Ai103QuizApp({
+class QuizMachineApp extends StatefulWidget {
+  const QuizMachineApp({
     this.repository,
     this.environmentRepository,
     this.backendSession,
     this.acceptanceStore,
+    this.theme,
+    this.darkTheme,
     super.key,
   });
 
@@ -21,12 +23,14 @@ class Ai103QuizApp extends StatefulWidget {
   final EnvironmentRepository? environmentRepository;
   final BackendSession? backendSession;
   final AcceptanceStore? acceptanceStore;
+  final ThemeData? theme;
+  final ThemeData? darkTheme;
 
   @override
-  State<Ai103QuizApp> createState() => _Ai103QuizAppState();
+  State<QuizMachineApp> createState() => _QuizMachineAppState();
 }
 
-class _Ai103QuizAppState extends State<Ai103QuizApp> {
+class _QuizMachineAppState extends State<QuizMachineApp> {
   late final QuizRepository _repository;
   EnvironmentRepository? _environmentRepository;
   late final AcceptanceStore _acceptanceStore;
@@ -63,8 +67,8 @@ class _Ai103QuizAppState extends State<Ai103QuizApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Microsoft Certification Practice',
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: widget.theme ?? AppTheme.light,
+      darkTheme: widget.darkTheme ?? AppTheme.dark,
       themeMode: _themeMode,
       home: !_onboardingComplete && _environmentRepository != null
           ? OnboardingPage(

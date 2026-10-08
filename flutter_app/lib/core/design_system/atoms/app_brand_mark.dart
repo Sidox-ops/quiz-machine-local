@@ -9,7 +9,7 @@ class AppBrandMark extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Semantics(
-      label: 'AI-103 Practice',
+      label: 'Quiz Machine',
       image: true,
       child: DecoratedBox(
         decoration: BoxDecoration(

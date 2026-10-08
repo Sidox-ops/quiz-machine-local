@@ -9,7 +9,7 @@ import '../domain/setup_models.dart';
 
 const _markdownExample = '''---
 schema: quiz-machine-corpus/v1
-document_id: ai103-foundry-evaluation
+document_id: quiz-machine-foundry-evaluation
 certification_code: AI-103
 domain: Plan and manage an Azure AI solution
 title: Foundry evaluation notes
