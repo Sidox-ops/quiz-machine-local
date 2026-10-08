@@ -6,7 +6,11 @@ from unittest.mock import patch
 from fastapi import HTTPException
 
 from backend import api
-from backend.schemas import MarkdownCorpusBatchImportRequest, ModelSelectionRequest
+from backend.schemas import (
+    CorpusImportRequest,
+    MarkdownCorpusBatchImportRequest,
+    ModelSelectionRequest,
+)
 
 
 def _markdown(document_id: str, title: str = "Evaluation notes") -> str:
@@ -76,6 +80,31 @@ class _Rag:
 
 
 class CorpusApiTests(unittest.TestCase):
+    def test_legacy_json_import_uses_an_internal_storage_key(self) -> None:
+        request = CorpusImportRequest.model_validate({
+            "filename": "../../outside.json",
+            "rights_confirmed": True,
+            "corpus": {
+                "title": "Private notes",
+                "language": "en",
+                "chunks": [{"id": "chunk-1", "content": "Local study notes."}],
+            },
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            data_dir = root / "data"
+            rag = _Rag()
+            with patch.object(api, "USER_DATA_DIR", data_dir), patch.object(
+                api, "client", _ModelClient()
+            ), patch.object(api, "rag", rag):
+                api.import_corpus(request)
+
+            stored = list(data_dir.glob("imported-*.json"))
+            self.assertEqual(len(stored), 1)
+            self.assertEqual(len(stored[0].stem.removeprefix("imported-")), 64)
+            self.assertFalse((root / "outside.json").exists())
+            self.assertEqual(rag.build_calls, 1)
+
     def test_model_selection_is_persisted_after_inventory_validation(self) -> None:
         client = _SelectionClient()
         request = ModelSelectionRequest(model="qwen3:8b")

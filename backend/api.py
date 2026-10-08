@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import json
+import hashlib
 import hmac
-import re
+import json
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -132,13 +132,10 @@ def import_corpus(request: CorpusImportRequest) -> CorpusValidationResponse:
         serialized = json.dumps(request.corpus, ensure_ascii=False, indent=2)
         if len(serialized.encode("utf-8")) > 5 * 1024 * 1024:
             raise ValueError("The corpus exceeds the 5 MB import limit.")
-        stem = re.sub(r"[^a-zA-Z0-9._-]+", "-", request.filename).strip(".-")
-        if not stem:
-            stem = "imported-corpus"
-        if not stem.lower().endswith(".json"):
-            stem += ".json"
+        storage_key = hashlib.sha256(request.filename.encode("utf-8")).hexdigest()
+        stored_filename = f"imported-{storage_key}.json"
         USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
-        target = USER_DATA_DIR / stem
+        target = USER_DATA_DIR / stored_filename
         previous_content = target.read_bytes() if target.exists() else None
         target.write_text(serialized, encoding="utf-8")
         try:

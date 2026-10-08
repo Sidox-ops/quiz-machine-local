@@ -369,13 +369,14 @@ def validate_markdown_corpus(content: str, filename: str = "corpus.md") -> dict:
                 hint="Example: `source_url: https://learn.microsoft.com/...`.",
             ))
 
-    headings = [
-        (line_number, match.group(1), match.group(2).strip())
-        for line_number, line in enumerate(body.splitlines(), start=body_start_line)
-        if (match := re.match(r"^(#{1,6})\s+(.+?)\s*$", line))
-    ]
-    h1_headings = [item for item in headings if len(item[1]) == 1]
-    h2_headings = [item for item in headings if len(item[1]) == 2]
+    headings = []
+    for line_number, line in enumerate(body.splitlines(), start=body_start_line):
+        heading = _markdown_heading(line)
+        if heading is not None:
+            level, title = heading
+            headings.append((line_number, level, title))
+    h1_headings = [item for item in headings if item[1] == 1]
+    h2_headings = [item for item in headings if item[1] == 2]
     if len(h1_headings) != 1:
         issues.append(MarkdownCorpusIssue(
             code="invalid_title_heading",
@@ -477,8 +478,7 @@ def _parse_markdown_frontmatter(content: str) -> tuple[dict[str, str], str, int]
     for line_number, raw_line in enumerate(lines[1:closing_index], start=2):
         if not raw_line.strip() or raw_line.lstrip().startswith("#"):
             continue
-        match = re.fullmatch(r"([a-z_][a-z0-9_]*)\s*:\s*(.*?)\s*", raw_line)
-        if not match:
+        if ":" not in raw_line:
             issues.append(MarkdownCorpusIssue(
                 code="invalid_frontmatter_line",
                 line=line_number,
@@ -486,7 +486,16 @@ def _parse_markdown_frontmatter(content: str) -> tuple[dict[str, str], str, int]
                 hint="Lists and nested YAML are intentionally not supported.",
             ))
             continue
-        key, value = match.groups()
+        raw_key, value = raw_line.split(":", maxsplit=1)
+        key = raw_key.rstrip()
+        if not _is_frontmatter_key(key):
+            issues.append(MarkdownCorpusIssue(
+                code="invalid_frontmatter_line",
+                line=line_number,
+                message="Frontmatter lines must use the flat `key: value` form.",
+                hint="Lists and nested YAML are intentionally not supported.",
+            ))
+            continue
         value = value.strip()
         if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
             value = value[1:-1].strip()
@@ -508,22 +517,50 @@ def _markdown_sections(body: str) -> list[dict]:
     lines = body.splitlines()
     starts = [
         index for index, line in enumerate(lines)
-        if re.match(r"^##\s+", line)
+        if (heading := _markdown_heading(line)) is not None and heading[0] == 2
     ]
     sections = []
     for position, start in enumerate(starts):
         end = starts[position + 1] if position + 1 < len(starts) else len(lines)
-        title = re.sub(r"^##\s+", "", lines[start]).strip()
+        heading = _markdown_heading(lines[start])
+        assert heading is not None
+        title = heading[1]
         section_lines = lines[start + 1:end]
         if position == 0:
             introduction = [
                 line for line in lines[:start]
-                if not re.match(r"^#\s+", line)
+                if not (
+                    (heading := _markdown_heading(line)) is not None
+                    and heading[0] == 1
+                )
             ]
             section_lines = [*introduction, *section_lines]
         content = "\n".join(section_lines).strip()
         sections.append({"title": title, "content": content, "line": start + 1})
     return sections
+
+
+def _markdown_heading(line: str) -> tuple[int, str] | None:
+    """Parse an ATX heading in linear time without ambiguous regex backtracking."""
+    level = 0
+    while level < len(line) and line[level] == "#":
+        level += 1
+    if level < 1 or level > 6 or level >= len(line) or not line[level].isspace():
+        return None
+    title = line[level:].strip()
+    return (level, title) if title else None
+
+
+def _is_frontmatter_key(value: str) -> bool:
+    if not value or not value.isascii():
+        return False
+    first = value[0]
+    if first != "_" and not ("a" <= first <= "z"):
+        return False
+    return all(
+        character == "_" or character.isdigit() or "a" <= character <= "z"
+        for character in value[1:]
+    )
 
 
 def _normalized(value: str) -> str:
