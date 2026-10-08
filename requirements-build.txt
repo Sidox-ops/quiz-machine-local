@@ -1,2 +1,2 @@
-pyinstaller==6.16.0
-pip-licenses==5.0.0
+pyinstaller==6.22.3
+pip-licenses==5.5.5
