@@ -248,7 +248,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('qwen3:8b (recommended)').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Use model'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Test and use model'));
     await tester.pumpAndSettle();
 
     expect(environment.selectedModel, 'qwen3:8b');

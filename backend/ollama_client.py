@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,6 +13,7 @@ from .config import (
     GENERATION_CONTEXT_TOKENS,
     GENERATION_TEMPERATURE,
     LLM_MODEL,
+    MODEL_PROBE_TIMEOUT_SECONDS,
     OLLAMA_BASE_URL,
     REQUEST_TIMEOUT_SECONDS,
 )
@@ -20,6 +22,13 @@ from .model_settings import ModelSettingsStore
 
 class OllamaError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class ModelProbeResult:
+    status: str = "not_run"
+    duration_ms: int | None = None
+    error: str = ""
 
 
 @dataclass(frozen=True)
@@ -35,8 +44,28 @@ class OllamaModelInfo:
     license: str = ""
     compatible: bool = False
     compatibility_reason: str = ""
+    probe_status: str = "not_run"
+    probe_duration_ms: int | None = None
+    probe_error: str = ""
 
-    def public_payload(self, *, selected: bool, recommended: bool) -> dict:
+    @property
+    def estimated_memory_bytes(self) -> int:
+        if self.size <= 0:
+            return 0
+        return int(self.size * 1.35 + 512 * 1024**2)
+
+    def fits_memory(self, physical_memory_bytes: int | None) -> bool | None:
+        if not physical_memory_bytes or not self.estimated_memory_bytes:
+            return None
+        return self.estimated_memory_bytes <= int(physical_memory_bytes * 0.70)
+
+    def public_payload(
+        self,
+        *,
+        selected: bool,
+        recommended: bool,
+        physical_memory_bytes: int | None = None,
+    ) -> dict:
         return {
             "name": self.name,
             "digest": self.digest,
@@ -49,6 +78,11 @@ class OllamaModelInfo:
             "license": self.license,
             "compatible": self.compatible,
             "compatibility_reason": self.compatibility_reason,
+            "estimated_memory_bytes": self.estimated_memory_bytes,
+            "fits_memory": self.fits_memory(physical_memory_bytes),
+            "probe_status": self.probe_status,
+            "probe_duration_ms": self.probe_duration_ms,
+            "probe_error": self.probe_error,
             "selected": selected,
             "recommended": recommended,
         }
@@ -83,6 +117,7 @@ class OllamaClient:
         self.base_url = base_url.rstrip("/")
         self.settings = settings or ModelSettingsStore()
         self._show_cache: dict[str, tuple[str, dict[str, Any]]] = {}
+        self._probe_cache: dict[str, tuple[str, ModelProbeResult]] = {}
 
     def _model_payloads(self) -> list[dict[str, Any]]:
         try:
@@ -191,6 +226,12 @@ class OllamaClient:
                 (line.strip() for line in license_text.splitlines() if line.strip()),
                 "",
             )[:160]
+            cached_probe = self._probe_cache.get(name)
+            probe = (
+                cached_probe[1]
+                if cached_probe and (not digest or cached_probe[0] == digest)
+                else ModelProbeResult()
+            )
             result.append(
                 OllamaModelInfo(
                     name=name,
@@ -204,24 +245,120 @@ class OllamaClient:
                     license=license_name,
                     compatible=compatible,
                     compatibility_reason=reason,
+                    probe_status=probe.status,
+                    probe_duration_ms=probe.duration_ms,
+                    probe_error=probe.error,
                 )
             )
         return result
 
     @staticmethod
-    def recommend_model(models: list[OllamaModelInfo]) -> str | None:
-        compatible = [model for model in models if model.compatible]
+    def recommend_model(
+        models: list[OllamaModelInfo],
+        physical_memory_bytes: int | None = None,
+    ) -> str | None:
+        compatible = [
+            model
+            for model in models
+            if model.compatible and model.probe_status != "failed"
+        ]
         if not compatible:
             return None
+        memory_fit = [
+            model
+            for model in compatible
+            if model.fits_memory(physical_memory_bytes) is not False
+        ]
+        candidates = memory_fit or compatible
         return max(
-            compatible,
+            candidates,
             key=lambda model: (
+                model.probe_status == "passed",
                 _parameter_count(model.parameter_size),
                 _quantization_bits(model.quantization_level),
                 model.size,
                 model.name.casefold(),
             ),
         ).name
+
+    def probe_model(
+        self,
+        name: str,
+        models: list[OllamaModelInfo] | None = None,
+    ) -> ModelProbeResult:
+        inventory = models if models is not None else self.list_model_details()
+        selected = next((model for model in inventory if model.name == name), None)
+        if selected is None:
+            raise OllamaError(f"Ollama model is not installed: {name}")
+        if not selected.compatible:
+            raise OllamaError(selected.compatibility_reason)
+
+        cached = self._probe_cache.get(selected.name)
+        if cached and (not selected.digest or cached[0] == selected.digest):
+            if cached[1].status == "passed":
+                return cached[1]
+
+        schema = {
+            "type": "object",
+            "properties": {"status": {"type": "string", "enum": ["ok"]}},
+            "required": ["status"],
+            "additionalProperties": False,
+        }
+        started = time.monotonic()
+        try:
+            request_payload: dict[str, Any] = {
+                "model": selected.name,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Return only the requested JSON object.",
+                    },
+                    {"role": "user", "content": "Confirm readiness with status ok."},
+                ],
+                "format": schema,
+                "stream": False,
+                "keep_alive": "10m",
+                "options": {
+                    "num_ctx": min(
+                        selected.context_length or GENERATION_CONTEXT_TOKENS,
+                        GENERATION_CONTEXT_TOKENS,
+                    ),
+                    "num_predict": 24,
+                    "temperature": 0,
+                },
+            }
+            if "thinking" in selected.capabilities:
+                request_payload["think"] = False
+            response = requests.post(
+                f"{self.base_url}/api/chat",
+                json=request_payload,
+                timeout=MODEL_PROBE_TIMEOUT_SECONDS,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            content = payload.get("message", {}).get("content", "")
+            parsed = _json_object(content)
+            if parsed != {"status": "ok"}:
+                raise ValueError("unexpected structured response")
+        except (requests.RequestException, ValueError, TypeError) as exc:
+            duration_ms = round((time.monotonic() - started) * 1000)
+            result = ModelProbeResult(
+                status="failed",
+                duration_ms=duration_ms,
+                error=(
+                    "The model failed Quiz Machine's local structured-output test: "
+                    f"{str(exc)[:300]}"
+                ),
+            )
+            self._probe_cache[selected.name] = (selected.digest, result)
+            raise OllamaError(result.error) from exc
+
+        result = ModelProbeResult(
+            status="passed",
+            duration_ms=round((time.monotonic() - started) * 1000),
+        )
+        self._probe_cache[selected.name] = (selected.digest, result)
+        return result
 
     @property
     def selection_locked(self) -> bool:

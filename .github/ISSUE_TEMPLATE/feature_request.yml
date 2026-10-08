@@ -1,0 +1,25 @@
+name: Feature request
+description: Propose a local-first improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Local-first and privacy impact
+      description: Describe any network, storage, model, or telemetry implications.
+    validations:
+      required: true

@@ -39,7 +39,8 @@ from .schemas import (
     SetupStartResponse,
     SetupStatusResponse,
 )
-from .system_setup import SetupManager, diagnostics
+from .system_setup import SetupManager, diagnostics, physical_memory_bytes
+from .version import APP_VERSION
 
 client = OllamaClient()
 rag = RagIndex(client)
@@ -49,7 +50,7 @@ engine = QuizEngine(client, rag, progress, questions)
 batches = BatchJobManager(engine)
 setup = SetupManager(client, rag)
 
-app = FastAPI(title="Microsoft AI Certification Quiz Machine", version="0.5.0")
+app = FastAPI(title="Microsoft AI Certification Quiz Machine", version=APP_VERSION)
 
 
 @app.middleware("http")
@@ -68,7 +69,9 @@ def health() -> dict:
         return {
             "ok": True,
             "llm_model": selected,
-            "recommended_llm_model": client.recommend_model(models) or "",
+            "recommended_llm_model": (
+                client.recommend_model(models, physical_memory_bytes()) or ""
+            ),
             "embedding_model": EMBEDDING_MODEL,
             "ollama_models": [model.name for model in models],
             "knowledge_provider": rag.knowledge_provider,
@@ -103,6 +106,7 @@ def select_system_model(request: ModelSelectionRequest) -> dict:
         )
     try:
         inventory = client.list_model_details()
+        client.probe_model(request.model.strip(), inventory)
         client.set_selected_model(request.model.strip(), inventory)
         return diagnostics(client, rag)
     except OllamaError as exc:

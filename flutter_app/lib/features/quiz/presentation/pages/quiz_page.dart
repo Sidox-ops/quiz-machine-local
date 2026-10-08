@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/design_system/atoms/app_brand_mark.dart';
 import '../../../../core/design_system/foundations/app_tokens.dart';
 import '../../../../core/design_system/molecules/score_summary.dart';
+import '../../../../core/version.dart';
 import '../../data/quiz_repository.dart';
 import '../../../setup/data/environment_repository.dart';
 import '../../../setup/presentation/corpus_import_dialog.dart';
@@ -219,7 +220,7 @@ class _QuizPageState extends State<QuizPage> {
     showAboutDialog(
       context: context,
       applicationName: 'Quiz Machine',
-      applicationVersion: '0.1.0',
+      applicationVersion: appVersion,
       applicationLegalese:
           'Copyright 2026 Quiz Machine publisher.\n'
           'Independent educational tool. Not affiliated with Microsoft.',

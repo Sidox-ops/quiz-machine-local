@@ -2,9 +2,21 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${VERSION:-0.1.0}"
+VERSION="${VERSION:-$(tr -d '[:space:]' < "$ROOT_DIR/VERSION")}"
+RELEASE_CHANNEL="${RELEASE_CHANNEL:-local}"
 APP_PATH="$ROOT_DIR/flutter_app/build/macos/Build/Products/Release/Quiz Machine.app"
 RELEASE_DIR="$ROOT_DIR/release"
+
+if [[ "$RELEASE_CHANNEL" == "public" ]]; then
+  [[ -n "${MACOS_SIGN_IDENTITY:-}" ]] || {
+    printf 'MACOS_SIGN_IDENTITY is required for a public release.\n' >&2
+    exit 1
+  }
+  [[ -n "${NOTARY_PROFILE:-}" ]] || {
+    printf 'NOTARY_PROFILE is required for a public release.\n' >&2
+    exit 1
+  }
+fi
 
 cd "$ROOT_DIR"
 ./scripts/build_backend.sh
@@ -15,7 +27,8 @@ cd "$ROOT_DIR"
   fi
   ./configure_platforms.sh
   ./enable_macos_network.sh
-  flutter build macos --release
+  flutter build macos --release \
+    --dart-define="QUIZ_MACHINE_VERSION=$VERSION"
 )
 
 mkdir -p "$APP_PATH/Contents/Resources/backend" "$RELEASE_DIR"
@@ -32,6 +45,10 @@ if [[ -n "${MACOS_SIGN_IDENTITY:-}" ]]; then
   codesign --force --deep --options runtime --timestamp \
     --sign "$MACOS_SIGN_IDENTITY" "$APP_PATH"
 else
+  if [[ "$RELEASE_CHANNEL" == "public" ]]; then
+    printf 'MACOS_SIGN_IDENTITY is required for a public release.\n' >&2
+    exit 1
+  fi
   # Re-seal the bundle after adding the backend so local test builds remain
   # internally consistent. Public releases must use a Developer ID identity.
   codesign --force --deep --sign - "$APP_PATH"
@@ -45,6 +62,9 @@ hdiutil create -volname "Quiz Machine" -srcfolder "$APP_PATH" \
 if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   xcrun notarytool submit "$DMG_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
   xcrun stapler staple "$DMG_PATH"
+elif [[ "$RELEASE_CHANNEL" == "public" ]]; then
+  printf 'NOTARY_PROFILE is required for a public release.\n' >&2
+  exit 1
 fi
 
 shasum -a 256 "$DMG_PATH" > "$DMG_PATH.sha256"

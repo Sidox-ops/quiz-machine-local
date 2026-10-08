@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: monthly
+    groups:
+      python-runtime:
+        patterns: ["*"]
+  - package-ecosystem: pub
+    directory: "/flutter_app"
+    schedule:
+      interval: monthly
+    groups:
+      flutter-runtime:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]

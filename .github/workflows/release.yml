@@ -1,0 +1,141 @@
+name: Signed release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.2"
+          channel: stable
+          cache: true
+      - name: Verify tag and configure build environment
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          test "v$(cat VERSION)" = "$TAG"
+          test -n "$MACOS_CERTIFICATE_P12_BASE64"
+          test -n "$MACOS_CERTIFICATE_PASSWORD"
+          test -n "$MACOS_SIGN_IDENTITY"
+          test -n "$APPLE_ID"
+          test -n "$APPLE_TEAM_ID"
+          test -n "$APPLE_APP_PASSWORD"
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements.lock -r requirements-build.txt
+          printf '%s' "$MACOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/release-certificate.p12"
+          security create-keychain -p actions "$RUNNER_TEMP/quiz-machine.keychain-db"
+          security set-keychain-settings -lut 21600 "$RUNNER_TEMP/quiz-machine.keychain-db"
+          security unlock-keychain -p actions "$RUNNER_TEMP/quiz-machine.keychain-db"
+          security import "$RUNNER_TEMP/release-certificate.p12" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$RUNNER_TEMP/quiz-machine.keychain-db"
+          security list-keychain -d user -s "$RUNNER_TEMP/quiz-machine.keychain-db"
+          security set-key-partition-list -S apple-tool:,apple: -s -k actions "$RUNNER_TEMP/quiz-machine.keychain-db"
+          xcrun notarytool store-credentials quiz-machine-ci --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD"
+      - name: Build, sign and notarize macOS release
+        shell: bash
+        env:
+          VERSION: ${{ github.ref_name }}
+          RELEASE_CHANNEL: public
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          NOTARY_PROFILE: quiz-machine-ci
+        run: |
+          VERSION="${VERSION#v}" ./scripts/package_macos.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: macos-release
+          path: release/*
+          if-no-files-found: error
+      - name: Remove temporary signing keychain
+        if: always()
+        shell: bash
+        run: security delete-keychain "$RUNNER_TEMP/quiz-machine.keychain-db" || true
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.2"
+          channel: stable
+          cache: true
+      - name: Verify tag and import signing certificate
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+          WINDOWS_CERTIFICATE_PFX_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_PFX_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          if ("v$((Get-Content VERSION -Raw).Trim())" -ne $env:TAG) { throw "Tag and VERSION differ." }
+          if (-not $env:WINDOWS_CERTIFICATE_PFX_BASE64) { throw "The Windows signing certificate secret is missing." }
+          if (-not $env:WINDOWS_CERTIFICATE_PASSWORD) { throw "The Windows signing password secret is missing." }
+          python -m venv .venv
+          .venv\Scripts\python.exe -m pip install -r requirements.lock -r requirements-build.txt
+          $certificatePath = Join-Path $env:RUNNER_TEMP "release-certificate.pfx"
+          [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_PFX_BASE64))
+          $password = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+          $certificate = Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          "WINDOWS_SIGN_CERTIFICATE_THUMBPRINT=$($certificate.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build and sign Windows release
+        shell: pwsh
+        env:
+          VERSION: ${{ github.ref_name }}
+          RELEASE_CHANNEL: public
+        run: |
+          $env:VERSION = $env:VERSION.TrimStart('v')
+          .\scripts\package_windows.ps1
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-release
+          path: release/*
+          if-no-files-found: error
+
+  publish:
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: "*-release"
+          merge-multiple: true
+          path: release
+      - name: Attest release provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: "release/Quiz-Machine-*"
+      - name: Publish immutable release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          prerelease=()
+          if [[ "$TAG" == *-* ]]; then prerelease=(--prerelease); fi
+          gh release create "$TAG" release/* --verify-tag --generate-notes "${prerelease[@]}"

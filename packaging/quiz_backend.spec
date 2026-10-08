@@ -10,6 +10,7 @@ a = Analysis(
     pathex=[str(root)],
     binaries=[],
     datas=[
+        (str(root / "VERSION"), "."),
         (str(root / "agent.md"), "."),
         (str(root / "data" / "reference"), "data/reference"),
     ],

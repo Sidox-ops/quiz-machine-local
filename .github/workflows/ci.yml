@@ -8,12 +8,16 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -21,6 +25,7 @@ jobs:
       - run: python -m pip install -r requirements.lock
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q backend tests build_index.py quiz.py
+      - run: python scripts/check_version.py
       - run: bash -n setup.sh start.sh run_backend.sh scripts/*.sh
 
   flutter:
@@ -29,7 +34,7 @@ jobs:
       run:
         working-directory: flutter_app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.41.2"
@@ -37,4 +42,45 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test
+      - run: flutter test --exclude-tags=golden
+
+  flutter-goldens:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: flutter_app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.2"
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter test --tags=golden
+
+  desktop-builds:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: macos
+          - os: windows-latest
+            target: windows
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: flutter_app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.2"
+          channel: stable
+          cache: true
+      - name: Generate desktop runner
+        shell: bash
+        run: ./bootstrap.sh
+      - name: Build ${{ matrix.target }} application
+        run: flutter build ${{ matrix.target }} --release

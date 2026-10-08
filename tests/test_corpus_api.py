@@ -46,6 +46,10 @@ class _SelectionClient:
         self.selected = model
         return model
 
+    def probe_model(self, model: str, inventory: list[str]) -> None:
+        if inventory != ["installed-model"]:
+            raise AssertionError("The installed inventory must be validated.")
+
 
 class _Batches:
     def __init__(self, active: bool):

@@ -24,7 +24,7 @@ void main() {
       find.byType(Scaffold),
       matchesGoldenFile('goldens/setup_mobile.png'),
     );
-  });
+  }, tags: 'golden');
 
   testWidgets('desktop question layout', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -44,5 +44,5 @@ void main() {
       find.byType(Scaffold),
       matchesGoldenFile('goldens/question_desktop.png'),
     );
-  });
+  }, tags: 'golden');
 }

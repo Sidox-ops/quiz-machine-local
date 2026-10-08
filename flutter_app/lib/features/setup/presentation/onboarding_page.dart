@@ -411,12 +411,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
     setState(() {
       _busy = true;
       _error = null;
-      _status = 'Selecting $model...';
+      _status = 'Testing structured output with $model...';
     });
     try {
       final result = await widget.repository.selectModel(model);
       if (!mounted) return;
-      _applyDiagnostics(result, status: '$model selected.');
+      _applyDiagnostics(result,
+          status: '$model passed the local test and was selected.');
     } catch (exception) {
       if (mounted) setState(() => _error = exception.toString());
     } finally {
@@ -449,10 +450,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
         .toList(growable: false);
     final selected = matches.isEmpty ? null : matches.first;
     if (selected == null) return 'Choose an installed local chat model.';
+    final recommendation = diagnostics.modelRecommendationReason.isEmpty
+        ? 'Recommended for this machine.'
+        : diagnostics.modelRecommendationReason;
     final prefix = selected.recommended
-        ? 'Recommended because it is the largest compatible installed model.'
+        ? '$recommendation '
         : 'Installed compatible model.';
-    return '$prefix ${selected.summary}';
+    final license =
+        selected.license.isEmpty ? '' : ' Licence: ${selected.license}.';
+    final warning = selected.fitsMemory == false
+        ? ' This model may exceed the recommended memory budget.'
+        : '';
+    return '$prefix ${selected.summary}.$license$warning';
   }
 
   Future<void> _importCorpus() async {
@@ -613,25 +622,36 @@ class _CheckRow extends StatelessWidget {
         : warning
             ? context.semanticColors.attention
             : Theme.of(context).colorScheme.error;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        children: [
-          Icon(
-            ok
-                ? Icons.check_circle
-                : warning
-                    ? Icons.warning
-                    : Icons.cancel,
-            color: color,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Flexible(child: Text(detail, textAlign: TextAlign.end)),
-        ],
+    final status = ok
+        ? 'ready'
+        : warning
+            ? 'warning'
+            : 'not ready';
+    return Semantics(
+      container: true,
+      label: '$label, $detail, $status',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Icon(
+              ok
+                  ? Icons.check_circle
+                  : warning
+                      ? Icons.warning
+                      : Icons.cancel,
+              color: color,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child:
+                  Text(label, style: Theme.of(context).textTheme.titleMedium),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(child: Text(detail, textAlign: TextAlign.end)),
+          ],
+        ),
       ),
     );
   }

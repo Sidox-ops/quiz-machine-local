@@ -14,6 +14,11 @@ class LocalModelInfo {
     this.capabilities = const [],
     this.contextLength,
     this.license = '',
+    this.estimatedMemoryBytes = 0,
+    this.fitsMemory,
+    this.probeStatus = 'not_run',
+    this.probeDurationMs,
+    this.probeError = '',
     this.selected = false,
     this.recommended = false,
   });
@@ -27,18 +32,28 @@ class LocalModelInfo {
   final List<String> capabilities;
   final int? contextLength;
   final String license;
+  final int estimatedMemoryBytes;
+  final bool? fitsMemory;
+  final String probeStatus;
+  final int? probeDurationMs;
+  final String probeError;
   final bool compatible;
   final String compatibilityReason;
   final bool selected;
   final bool recommended;
 
   double get sizeGb => size / (1024 * 1024 * 1024);
+  double get estimatedMemoryGb => estimatedMemoryBytes / (1024 * 1024 * 1024);
 
   String get summary {
     final parts = <String>[
       if (parameterSize.isNotEmpty) parameterSize,
       if (quantizationLevel.isNotEmpty) quantizationLevel,
       if (size > 0) '${sizeGb.toStringAsFixed(1)} GB',
+      if (estimatedMemoryBytes > 0)
+        '~${estimatedMemoryGb.toStringAsFixed(1)} GB memory',
+      if (probeStatus == 'passed' && probeDurationMs != null)
+        'JSON test ${(probeDurationMs! / 1000).toStringAsFixed(1)} s',
     ];
     return parts.isEmpty ? compatibilityReason : parts.join(' • ');
   }
@@ -57,6 +72,12 @@ class LocalModelInfo {
           : const [],
       contextLength: (json['context_length'] as num?)?.toInt(),
       license: json['license']?.toString() ?? '',
+      estimatedMemoryBytes:
+          (json['estimated_memory_bytes'] as num?)?.toInt() ?? 0,
+      fitsMemory: json['fits_memory'] as bool?,
+      probeStatus: json['probe_status']?.toString() ?? 'not_run',
+      probeDurationMs: (json['probe_duration_ms'] as num?)?.toInt(),
+      probeError: json['probe_error']?.toString() ?? '',
       compatible: json['compatible'] == true,
       compatibilityReason:
           json['compatibility_reason']?.toString() ?? 'Compatibility unknown.',
@@ -88,6 +109,8 @@ class SystemDiagnostics {
     this.ollamaModels = const [],
     this.recommendedLlmModel = '',
     this.modelSelectionLocked = false,
+    this.physicalMemoryBytes = 0,
+    this.modelRecommendationReason = '',
   });
 
   final String platform;
@@ -109,6 +132,8 @@ class SystemDiagnostics {
   final List<LocalModelInfo> ollamaModels;
   final String recommendedLlmModel;
   final bool modelSelectionLocked;
+  final int physicalMemoryBytes;
+  final String modelRecommendationReason;
 
   bool get ready =>
       ollamaInstalled &&
@@ -160,6 +185,10 @@ class SystemDiagnostics {
           : const [],
       recommendedLlmModel: json['recommended_llm_model']?.toString() ?? '',
       modelSelectionLocked: json['model_selection_locked'] == true,
+      physicalMemoryBytes:
+          (json['physical_memory_bytes'] as num?)?.toInt() ?? 0,
+      modelRecommendationReason:
+          json['model_recommendation_reason']?.toString() ?? '',
     );
   }
 }

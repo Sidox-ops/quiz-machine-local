@@ -26,7 +26,7 @@ never in the repository.
 ```bash
 MACOS_SIGN_IDENTITY="Developer ID Application: YOUR NAME (TEAMID)" \
 NOTARY_PROFILE="quiz-machine-notary" \
-VERSION="0.1.0" \
+RELEASE_CHANNEL="public" \
 ./scripts/package_macos.sh
 ```
 
@@ -39,13 +39,29 @@ Run in PowerShell on Windows after installing the prerequisites:
 
 ```powershell
 .venv\Scripts\python.exe -m pip install -r requirements-build.txt
-$env:VERSION = "0.1.0"
+$env:RELEASE_CHANNEL = "public"
+$env:WINDOWS_SIGN_CERTIFICATE_THUMBPRINT = "CERTIFICATE THUMBPRINT"
 .\scripts\package_windows.ps1
 ```
 
 The initial format is a ZIP containing the desktop executable and runtime
-files. Sign the executable and archive with the chosen Windows code-signing
-workflow before publication.
+files. The script signs every executable before creating the archive. Public
+mode fails closed if the certificate or `signtool.exe` is unavailable.
+
+Both scripts read the release version from the root `VERSION` file. Run
+`python scripts/check_version.py` before tagging. A pushed `v<version>` tag
+starts `.github/workflows/release.yml`; it refuses a mismatched tag, requires
+both signing identities, notarizes macOS, publishes checksums, and creates the
+GitHub Release only after both platform jobs succeed. It also publishes signed
+GitHub build-provenance attestations, which can be checked with
+`gh attestation verify <artifact> --repo Sidox-ops/quiz-machine-local`.
+
+The release workflow expects these GitHub Actions secrets:
+
+- `MACOS_CERTIFICATE_P12_BASE64`, `MACOS_CERTIFICATE_PASSWORD`,
+  `MACOS_SIGN_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`, and
+  `APPLE_APP_PASSWORD`;
+- `WINDOWS_CERTIFICATE_PFX_BASE64` and `WINDOWS_CERTIFICATE_PASSWORD`.
 
 ## AGPL source availability
 

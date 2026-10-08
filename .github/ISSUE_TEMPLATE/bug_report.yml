@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible Quiz Machine Local defect.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach private corpora, progress, credentials, or complete environment dumps.
+  - type: input
+    id: version
+    attributes:
+      label: Quiz Machine version or commit
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [macOS Apple Silicon, macOS Intel, Windows x64, Linux development, Other]
+    validations:
+      required: true
+  - type: input
+    id: ollama
+    attributes:
+      label: Ollama and model
+      description: Include Ollama version, model name, tag, and quantization when known.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: "1. Launch…\n2. Select…\n3. Observe…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and sanitized error
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed private corpus content, credentials, usernames, and local paths.
+          required: true

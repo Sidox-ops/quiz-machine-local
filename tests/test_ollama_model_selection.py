@@ -119,6 +119,59 @@ class OllamaModelSelectionTests(unittest.TestCase):
 
         self.assertEqual(OllamaClient.recommend_model(models), "qwen3:8b")
 
+    def test_recommendation_uses_the_largest_model_that_fits_memory(self) -> None:
+        models = [
+            _model("llama3.2:3b", parameters="3B", size=2 * 1024**3),
+            _model("qwen3:8b", parameters="8B", size=6 * 1024**3),
+            _model("deepseek-r1:14b", parameters="14B", size=10 * 1024**3),
+        ]
+
+        self.assertEqual(
+            OllamaClient.recommend_model(models, physical_memory_bytes=16 * 1024**3),
+            "qwen3:8b",
+        )
+
+    def test_probe_requires_valid_structured_output(self) -> None:
+        client = OllamaClient(settings=ModelSettingsStore(Path("unused")))
+        model = _model("qwen3:8b", parameters="8B", size=5_000)
+
+        with patch(
+            "backend.ollama_client.requests.post",
+            return_value=_response({"message": {"content": '{"status":"ok"}'}}),
+        ) as post:
+            result = client.probe_model("qwen3:8b", [model])
+
+        self.assertEqual(result.status, "passed")
+        self.assertGreaterEqual(result.duration_ms or 0, 0)
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual(payload["model"], "qwen3:8b")
+        self.assertEqual(payload["format"]["required"], ["status"])
+        self.assertNotIn("think", payload)
+
+    def test_failed_probe_excludes_model_from_recommendation(self) -> None:
+        client = OllamaClient(settings=ModelSettingsStore(Path("unused")))
+        large = _model("qwen3:8b", parameters="8B", size=5_000)
+        small = _model("llama3.2:3b", parameters="3B", size=2_000)
+
+        with patch(
+            "backend.ollama_client.requests.post",
+            return_value=_response({"message": {"content": '{"status":"wrong"}'}}),
+        ):
+            with self.assertRaisesRegex(OllamaError, "structured-output test"):
+                client.probe_model("qwen3:8b", [large, small])
+
+        inventory = [
+            OllamaModelInfo(
+                **{
+                    **large.__dict__,
+                    "probe_status": "failed",
+                    "probe_error": "invalid output",
+                }
+            ),
+            small,
+        ]
+        self.assertEqual(OllamaClient.recommend_model(inventory), "llama3.2:3b")
+
     def test_selected_model_is_persisted_without_downloading(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = ModelSettingsStore(Path(directory) / "settings.json")

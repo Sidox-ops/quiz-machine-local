@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import platform
+import os
 import shutil
 import subprocess
 import threading
@@ -15,6 +16,40 @@ from .rag import RagIndex
 
 
 RECOMMENDED_FREE_BYTES = 8 * 1024**3
+
+
+def physical_memory_bytes() -> int | None:
+    try:
+        pages = os.sysconf("SC_PHYS_PAGES")
+        page_size = os.sysconf("SC_PAGE_SIZE")
+        if pages > 0 and page_size > 0:
+            return int(pages * page_size)
+    except (AttributeError, OSError, ValueError):
+        pass
+    if platform.system() == "Windows":
+        try:
+            import ctypes
+
+            class MemoryStatus(ctypes.Structure):
+                _fields_ = [
+                    ("length", ctypes.c_ulong),
+                    ("memory_load", ctypes.c_ulong),
+                    ("total_physical", ctypes.c_ulonglong),
+                    ("available_physical", ctypes.c_ulonglong),
+                    ("total_page_file", ctypes.c_ulonglong),
+                    ("available_page_file", ctypes.c_ulonglong),
+                    ("total_virtual", ctypes.c_ulonglong),
+                    ("available_virtual", ctypes.c_ulonglong),
+                    ("available_extended_virtual", ctypes.c_ulonglong),
+                ]
+
+            status = MemoryStatus()
+            status.length = ctypes.sizeof(MemoryStatus)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+                return int(status.total_physical)
+        except (AttributeError, OSError, ValueError):
+            pass
+    return None
 
 
 def find_ollama() -> str | None:
@@ -43,7 +78,8 @@ def diagnostics(client: OllamaClient, rag: RagIndex) -> dict:
         return any(model_matches(required, name) for name in models)
 
     selected_llm_model = client.configured_model()
-    recommended_llm_model = client.recommend_model(inventory)
+    memory_bytes = physical_memory_bytes()
+    recommended_llm_model = client.recommend_model(inventory, memory_bytes)
     selected_info = client.selected_model_info(selected_llm_model, inventory)
 
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -58,10 +94,19 @@ def diagnostics(client: OllamaClient, rag: RagIndex) -> dict:
         "llm_ready": bool(selected_info and selected_info.compatible),
         "recommended_llm_model": recommended_llm_model or "",
         "model_selection_locked": client.selection_locked,
+        "physical_memory_bytes": memory_bytes or 0,
+        "model_recommendation_reason": (
+            "Best compatible installed model estimated to fit within 70% of "
+            "system memory. The selected model is verified with a local JSON probe."
+            if memory_bytes
+            else "Best compatible installed model. The selected model is verified "
+            "with a local JSON probe."
+        ),
         "ollama_models": [
             model.public_payload(
                 selected=model == selected_info,
                 recommended=model.name == recommended_llm_model,
+                physical_memory_bytes=memory_bytes,
             )
             for model in inventory
         ],
@@ -163,6 +208,13 @@ class SetupManager:
                 )
             if not selected_info.compatible:
                 raise RuntimeError(selected_info.compatibility_reason)
+
+            self._update(
+                "running",
+                "model",
+                f"Testing structured output with {selected_info.name}...",
+            )
+            self.client.probe_model(selected_info.name, inventory)
 
             if self.rag.uses_microsoft_learn:
                 self._update(

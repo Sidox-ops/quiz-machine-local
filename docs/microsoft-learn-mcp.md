@@ -83,8 +83,9 @@ an unrelated certification or unsupported model knowledge.
 
 Unit tests cover session negotiation, JSON/SSE parsing, tool discovery, search
 and fetch mappings, certification isolation, cache persistence, packet bounds,
-and failure paths with fakes. A live smoke test is optional and must write only
-to a temporary application-data directory.
+and failure paths with fakes. The scheduled `mcp-smoke.yml` workflow performs a
+bounded live negotiation and one official search twice per week. It does not
+prepare or persist a certification corpus and sends no user data.
 
 References:
 

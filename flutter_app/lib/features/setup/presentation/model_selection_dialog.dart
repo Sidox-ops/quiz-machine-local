@@ -42,6 +42,10 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
         diagnostics?.compatibleModels ?? const <LocalModelInfo>[];
     final selected =
         compatible.where((model) => model.name == _selectedModel).firstOrNull;
+    final recommendationReason =
+        diagnostics?.modelRecommendationReason.isNotEmpty == true
+            ? diagnostics!.modelRecommendationReason
+            : 'Recommended for this machine.';
 
     return AlertDialog(
       title: const Text('Local Ollama model'),
@@ -104,7 +108,9 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
                       const SizedBox(height: AppSpacing.sm),
                       if (selected != null)
                         Text(
-                          '${selected.summary}\n${selected.recommended ? 'Recommended as the largest compatible installed model. ' : ''}'
+                          '${selected.summary}\n${selected.recommended ? '$recommendationReason ' : ''}'
+                          '${selected.license.isEmpty ? '' : 'Licence: ${selected.license}. '}'
+                          '${selected.fitsMemory == false ? 'This model may exceed the recommended memory budget. ' : ''}'
                           'The change applies to future question generation; '
                           'prepared sessions and validated questions are kept.',
                           style: Theme.of(context).textTheme.bodySmall,
@@ -143,7 +149,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
                     _selectedModel == diagnostics.llmModel
                 ? null
                 : _save,
-            child: const Text('Use model'),
+            child: const Text('Test and use model'),
           ),
       ],
     );

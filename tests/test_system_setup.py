@@ -12,6 +12,7 @@ class _Client:
     def __init__(self, selected: str = "qwen3:8b"):
         self.selected = selected
         self.list_calls = 0
+        self.probe_calls: list[str] = []
 
     def list_models(self) -> list[str]:
         self.list_calls += 1
@@ -28,6 +29,13 @@ class _Client:
 
     def configured_model(self) -> str:
         return self.selected
+
+    def probe_model(
+        self,
+        name: str,
+        models: list[OllamaModelInfo],
+    ) -> None:
+        self.probe_calls.append(name)
 
     def selected_model_info(
         self,
@@ -84,6 +92,7 @@ class SetupManagerTests(unittest.TestCase):
 
         self.assertEqual(manager.state()["status"], "completed")
         self.assertEqual(client.list_calls, 1)
+        self.assertEqual(client.probe_calls, ["qwen3:8b"])
         self.assertEqual(rag.test_calls, 1)
         self.assertEqual(rag.build_calls, 0)
         self.assertFalse(hasattr(client, "pull_model"))
