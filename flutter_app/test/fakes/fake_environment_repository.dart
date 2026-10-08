@@ -7,7 +7,7 @@ class FakeEnvironmentRepository implements EnvironmentRepository {
     architecture: 'arm64',
     ollamaInstalled: true,
     ollamaReachable: true,
-    llmModel: 'gemma4:e4b-mlx',
+    llmModel: 'qwen3:8b',
     llmReady: true,
     embeddingModel: 'nomic-embed-text',
     embeddingReady: true,
@@ -16,10 +16,26 @@ class FakeEnvironmentRepository implements EnvironmentRepository {
     freeDiskBytes: 20 * 1024 * 1024 * 1024,
     recommendedFreeBytes: 8 * 1024 * 1024 * 1024,
     diskReady: true,
+    recommendedLlmModel: 'qwen3:8b',
+    ollamaModels: [
+      LocalModelInfo(
+        name: 'qwen3:8b',
+        size: 5 * 1024 * 1024 * 1024,
+        parameterSize: '8B',
+        quantizationLevel: 'Q4_K_M',
+        compatible: true,
+        compatibilityReason: 'Compatible local chat model.',
+        selected: true,
+        recommended: true,
+      ),
+    ],
   );
 
   @override
   Future<SystemDiagnostics> diagnostics() async => readyDiagnostics;
+
+  @override
+  Future<SystemDiagnostics> selectModel(String model) async => readyDiagnostics;
 
   @override
   Future<CorpusSummary> importCorpus({
@@ -28,7 +44,10 @@ class FakeEnvironmentRepository implements EnvironmentRepository {
     required bool rightsConfirmed,
   }) async {
     return const CorpusSummary(
-        title: 'Imported', language: 'en', chunkCount: 1);
+      title: 'Imported',
+      language: 'en',
+      chunkCount: 1,
+    );
   }
 
   @override

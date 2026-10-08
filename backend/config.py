@@ -14,12 +14,12 @@ STORAGE_DIR = Path(os.getenv("AI103_STORAGE_DIR", ROOT_DIR / "storage"))
 INDEX_PATH = STORAGE_DIR / "index.json"
 PROGRESS_PATH = STORAGE_DIR / "progress.json"
 QUESTIONS_PATH = STORAGE_DIR / "questions.json"
+MODEL_SETTINGS_PATH = STORAGE_DIR / "settings.json"
 MICROSOFT_LEARN_CORPUS_PATH = STORAGE_DIR / "microsoft_learn_corpus.json"
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 API_TOKEN = os.getenv("AI103_API_TOKEN", "")
 LLM_MODEL = os.getenv("AI103_LLM_MODEL", "").strip()
-DEFAULT_LLM_MODEL = os.getenv("AI103_DEFAULT_LLM_MODEL", "gemma4:e4b-mlx")
 EMBEDDING_MODEL = os.getenv("AI103_EMBEDDING_MODEL", "nomic-embed-text")
 
 TOP_K = max(1, min(int(os.getenv("AI103_TOP_K", "3")), 3))

@@ -7,8 +7,15 @@ The recommended development command is run from the repository root:
 ```
 
 It starts Ollama and the backend, enables official Microsoft Learn retrieval,
-generates missing platform files, and launches the desktop app. The quiz setup
-lets you choose AI-901, AI-103, or AI-200 before generating local QCMs.
+generates missing platform files, and launches the desktop app. Onboarding lists
+compatible generation models already installed in Ollama, recommends the largest
+one, and asks the user to choose before checking Microsoft Learn. It never
+downloads a model. The quiz setup then lets you choose AI-901, AI-103, or AI-200
+before generating local QCMs.
+
+Use the **Local model** action in the top bar to switch models for future
+generation. Prepared sessions and validated questions are preserved. A launch
+configured with `AI103_LLM_MODEL` keeps the selection read-only.
 
 Use the Insights action in the top bar to open the learning dashboard for the
 active certification. It shows actionable domain/objective signals and offers

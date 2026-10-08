@@ -2,6 +2,8 @@ import 'package:ai103_quiz_ui/app/quiz_app.dart';
 import 'package:ai103_quiz_ui/core/runtime/local_backend_manager.dart';
 import 'package:ai103_quiz_ui/features/quiz/domain/quiz_models.dart';
 import 'package:ai103_quiz_ui/features/quiz/presentation/organisms/generation_panel.dart';
+import 'package:ai103_quiz_ui/features/quiz/presentation/pages/quiz_page.dart';
+import 'package:ai103_quiz_ui/features/setup/domain/setup_models.dart';
 import 'package:ai103_quiz_ui/features/setup/presentation/corpus_import_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,8 +21,11 @@ class _NeverAcceptedStore extends AcceptanceStore {
 
 class _ShuffledAnswerRepository extends FakeQuizRepository {
   @override
-  Future<QuizAnswerResult> submitAnswer(String questionId, String option,
-      {double? elapsedSeconds}) async {
+  Future<QuizAnswerResult> submitAnswer(
+    String questionId,
+    String option, {
+    double? elapsedSeconds,
+  }) async {
     return const QuizAnswerResult(
       correct: false,
       selectedOptionId: 'opt_1',
@@ -92,9 +97,62 @@ class _DashboardRepository extends FakeQuizRepository {
   }
 }
 
+class _ModelEnvironmentRepository extends FakeEnvironmentRepository {
+  String selectedModel = 'llama3.2:3b';
+
+  SystemDiagnostics get _diagnostics => SystemDiagnostics(
+        platform: 'macOS',
+        architecture: 'arm64',
+        ollamaInstalled: true,
+        ollamaReachable: true,
+        llmModel: selectedModel,
+        llmReady: true,
+        embeddingModel: 'nomic-embed-text',
+        embeddingReady: true,
+        indexReady: true,
+        indexedChunks: 33,
+        knowledgeProvider: 'microsoft_learn_mcp',
+        knowledgeReady: true,
+        knowledgeCheckCompleted: true,
+        freeDiskBytes: 20 * 1024 * 1024 * 1024,
+        recommendedFreeBytes: 8 * 1024 * 1024 * 1024,
+        diskReady: true,
+        recommendedLlmModel: 'qwen3:8b',
+        ollamaModels: [
+          LocalModelInfo(
+            name: 'llama3.2:3b',
+            size: 2 * 1024 * 1024 * 1024,
+            parameterSize: '3B',
+            compatible: true,
+            compatibilityReason: 'Compatible local chat model.',
+            selected: selectedModel == 'llama3.2:3b',
+          ),
+          LocalModelInfo(
+            name: 'qwen3:8b',
+            size: 5 * 1024 * 1024 * 1024,
+            parameterSize: '8B',
+            compatible: true,
+            compatibilityReason: 'Compatible local chat model.',
+            selected: selectedModel == 'qwen3:8b',
+            recommended: true,
+          ),
+        ],
+      );
+
+  @override
+  Future<SystemDiagnostics> diagnostics() async => _diagnostics;
+
+  @override
+  Future<SystemDiagnostics> selectModel(String model) async {
+    selectedModel = model;
+    return _diagnostics;
+  }
+}
+
 void main() {
-  testWidgets('shows durable generation progress and retry count',
-      (tester) async {
+  testWidgets('shows durable generation progress and retry count', (
+    tester,
+  ) async {
     var cancelled = false;
     await tester.pumpWidget(
       MaterialApp(
@@ -120,17 +178,23 @@ void main() {
 
     expect(find.text('7 of 30'), findsOneWidget);
     expect(
-        find.text('0 reused from the validated bank • '
-            '12 candidates checked • 5 rejected and retried'),
-        findsOneWidget);
-    expect(find.textContaining('Revision never waits for a model call'),
-        findsOneWidget);
+      find.text(
+        '0 reused from the validated bank • '
+        '12 candidates checked • 5 rejected and retried',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Revision never waits for a model call'),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Cancel generation'));
     expect(cancelled, isTrue);
   });
 
-  testWidgets('shows certification corpus preparation progress',
-      (tester) async {
+  testWidgets('shows certification corpus preparation progress', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -158,16 +222,50 @@ void main() {
     expect(find.textContaining('small evidence packet'), findsOneWidget);
   });
 
+  testWidgets('changes the installed Ollama model from the quiz workspace', (
+    tester,
+  ) async {
+    final environment = _ModelEnvironmentRepository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizPage(
+          repository: FakeQuizRepository(),
+          environmentRepository: environment,
+          themeMode: ThemeMode.light,
+          onThemeModeChanged: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Local model'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Local Ollama model'), findsOneWidget);
+    expect(find.textContaining('never downloads'), findsOneWidget);
+
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('qwen3:8b (recommended)').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Use model'));
+    await tester.pumpAndSettle();
+
+    expect(environment.selectedModel, 'qwen3:8b');
+    expect(
+      find.text('qwen3:8b will be used for future question generation.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('shows structured Markdown drag-and-drop import', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: FilledButton(
-              onPressed: () => CorpusImportDialog.show(
-                context,
-                FakeEnvironmentRepository(),
-              ),
+              onPressed: () =>
+                  CorpusImportDialog.show(context, FakeEnvironmentRepository()),
               child: const Text('Open importer'),
             ),
           ),
@@ -191,8 +289,9 @@ void main() {
     );
   });
 
-  testWidgets('requires licence acknowledgement before system setup',
-      (tester) async {
+  testWidgets('requires licence acknowledgement before system setup', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       Ai103QuizApp(
         repository: FakeQuizRepository(),
@@ -212,9 +311,7 @@ void main() {
   });
 
   testWidgets('renders the session setup', (tester) async {
-    await tester.pumpWidget(
-      Ai103QuizApp(repository: FakeQuizRepository()),
-    );
+    await tester.pumpWidget(Ai103QuizApp(repository: FakeQuizRepository()));
     await tester.pumpAndSettle();
 
     expect(find.text('AI-103'), findsOneWidget);
@@ -226,8 +323,9 @@ void main() {
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
   });
 
-  testWidgets('opens useful learning dashboard and confirms scoped reset',
-      (tester) async {
+  testWidgets('opens useful learning dashboard and confirms scoped reset', (
+    tester,
+  ) async {
     final repository = _DashboardRepository();
     await tester.pumpWidget(Ai103QuizApp(repository: repository));
     await tester.pumpAndSettle();
@@ -239,12 +337,10 @@ void main() {
     expect(find.text('12'), findsOneWidget);
     expect(find.text('Priority objectives'), findsOneWidget);
     expect(find.text('Recurring confusions'), findsOneWidget);
-    final leadContext =
-        tester.element(find.text('Your preparation, made useful'));
-    expect(
-      Theme.of(leadContext).textTheme.headlineMedium?.fontFamily,
-      'Doto',
+    final leadContext = tester.element(
+      find.text('Your preparation, made useful'),
     );
+    expect(Theme.of(leadContext).textTheme.headlineMedium?.fontFamily, 'Doto');
 
     await tester.tap(find.text('Reset data'));
     await tester.pumpAndSettle();
@@ -263,16 +359,18 @@ void main() {
     expect(find.text('Learning data reset completed.'), findsOneWidget);
   });
 
-  testWidgets('switches the certification and reloads its course domains',
-      (tester) async {
+  testWidgets('switches the certification and reloads its course domains', (
+    tester,
+  ) async {
     final repository = FakeQuizRepository();
     await tester.pumpWidget(Ai103QuizApp(repository: repository));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(DropdownButton<String>).first);
     await tester.pumpAndSettle();
-    await tester
-        .tap(find.text('AI-901 — Microsoft Azure AI Fundamentals').last);
+    await tester.tap(
+      find.text('AI-901 — Microsoft Azure AI Fundamentals').last,
+    );
     await tester.pumpAndSettle();
 
     expect(repository.lastCatalogCertificationCode, 'AI-901');
@@ -281,9 +379,7 @@ void main() {
   });
 
   testWidgets('completes the answer workflow', (tester) async {
-    await tester.pumpWidget(
-      Ai103QuizApp(repository: FakeQuizRepository()),
-    );
+    await tester.pumpWidget(Ai103QuizApp(repository: FakeQuizRepository()));
     await tester.pumpAndSettle();
 
     final startButton = find.widgetWithText(FilledButton, 'Start session');
@@ -310,40 +406,40 @@ void main() {
     );
   });
 
-  testWidgets('maps stable option ids to presentation letters after shuffling',
-      (tester) async {
-    await tester.pumpWidget(
-      Ai103QuizApp(repository: _ShuffledAnswerRepository()),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'maps stable option ids to presentation letters after shuffling',
+    (tester) async {
+      await tester.pumpWidget(
+        Ai103QuizApp(repository: _ShuffledAnswerRepository()),
+      );
+      await tester.pumpAndSettle();
 
-    final startButton = find.widgetWithText(FilledButton, 'Start session');
-    await tester.ensureVisible(startButton);
-    await tester.tap(startButton);
-    await tester.pumpAndSettle();
+      final startButton = find.widgetWithText(FilledButton, 'Start session');
+      await tester.ensureVisible(startButton);
+      await tester.tap(startButton);
+      await tester.pumpAndSettle();
 
-    expect(find.text('A'), findsOneWidget);
-    expect(find.text('opt_1'), findsNothing);
+      expect(find.text('A'), findsOneWidget);
+      expect(find.text('opt_1'), findsNothing);
 
-    await tester.tap(find.text('A representative test dataset'));
-    await tester.pump();
-    await tester.tap(find.widgetWithText(FilledButton, 'Check answer'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('A representative test dataset'));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Check answer'));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.text('Correct answer: D — A longer system prompt'),
-      findsOneWidget,
-    );
-    expect(find.text('What mattered'), findsOneWidget);
-    expect(find.text('Rule to remember'), findsOneWidget);
-    expect(find.text('Why your choice misses'), findsOneWidget);
-    expect(find.text('Takeaway'), findsOneWidget);
-  });
+      expect(
+        find.text('Correct answer: D — A longer system prompt'),
+        findsOneWidget,
+      );
+      expect(find.text('What mattered'), findsOneWidget);
+      expect(find.text('Rule to remember'), findsOneWidget);
+      expect(find.text('Why your choice misses'), findsOneWidget);
+      expect(find.text('Takeaway'), findsOneWidget);
+    },
+  );
 
   testWidgets('renders generated case-study context', (tester) async {
-    await tester.pumpWidget(
-      Ai103QuizApp(repository: FakeQuizRepository()),
-    );
+    await tester.pumpWidget(Ai103QuizApp(repository: FakeQuizRepository()));
     await tester.pumpAndSettle();
 
     final cases = find.text('Cases');
@@ -359,6 +455,8 @@ void main() {
     expect(find.text('Contoso evaluation rollout'), findsOneWidget);
     expect(find.text('Requirements'), findsOneWidget);
     expect(
-        find.text('Measure quality against stable examples.'), findsOneWidget);
+      find.text('Measure quality against stable examples.'),
+      findsOneWidget,
+    );
   });
 }

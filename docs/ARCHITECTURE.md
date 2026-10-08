@@ -32,6 +32,29 @@ select evidence, call Ollama, or read local stores directly. The backend owns
 those decisions and returns public question DTOs without a correct answer until
 the answer endpoint is called.
 
+## Local model selection and onboarding
+
+Ollama remains the single model-provider boundary in
+`backend/ollama_client.py`; no model family is hard-coded into the generation
+pipeline. During onboarding, the backend reads `/api/tags` and `/api/show`,
+filters out embedding-only, cloud-backed, non-completion, and undersized-context
+models, then exposes the compatible installed inventory to Flutter. The
+recommendation is deliberately transparent: it is the largest compatible model
+reported by the local Ollama metadata, not a remote benchmark or an automatic
+installation decision.
+
+The user confirms the model before Microsoft Learn preparation is tested. The
+choice is stored atomically in the local application-data settings file and can
+be changed later for future generations. `AI103_LLM_MODEL` overrides and locks
+that setting for managed launches. Active generation jobs reject model changes;
+already prepared sessions and validated question-bank entries are not rewritten.
+
+Neither onboarding nor `start.sh` pulls generation or embedding models. Missing
+requirements produce an actionable status and remain under the user's control.
+Direct llama.cpp and other providers are outside the current boundary; they can
+be added later behind a provider interface without moving selection logic into
+Flutter.
+
 ## Corpus and evidence
 
 `backend/microsoft_learn_corpus.py` prepares and persists the canonical

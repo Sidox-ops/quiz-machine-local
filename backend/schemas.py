@@ -306,3 +306,7 @@ class SetupStatusResponse(BaseModel):
     status: Literal["idle", "running", "completed", "failed"]
     stage: str
     message: str
+
+
+class ModelSelectionRequest(BaseModel):
+    model: str = Field(min_length=1, max_length=200)

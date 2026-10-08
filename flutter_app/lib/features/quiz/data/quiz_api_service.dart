@@ -47,9 +47,9 @@ class QuizApiService {
   final String token;
 
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-      };
+    'Content-Type': 'application/json',
+    if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+  };
 
   Future<Map<String, dynamic>> startBatch({
     required String certificationCode,
@@ -82,8 +82,11 @@ class QuizApiService {
     return _post('/quiz/batch/$jobId/cancel', body: const {});
   }
 
-  Future<Map<String, dynamic>> answer(String questionId, String option,
-      {double? elapsedSeconds}) {
+  Future<Map<String, dynamic>> answer(
+    String questionId,
+    String option, {
+    double? elapsedSeconds,
+  }) {
     return _post(
       '/quiz/answer',
       body: {
@@ -127,6 +130,9 @@ class QuizApiService {
       _post('/system/setup', body: const {});
 
   Future<Map<String, dynamic>> setupStatus() => _get('/system/setup');
+
+  Future<Map<String, dynamic>> selectModel(String model) =>
+      _post('/system/model', body: {'model': model});
 
   Future<Map<String, dynamic>> importCorpus({
     required String filename,
@@ -179,10 +185,7 @@ class QuizApiService {
   }) {
     return _post(
       '/corpus/markdown/import-batch',
-      body: {
-        'files': files,
-        'rights_confirmed': rightsConfirmed,
-      },
+      body: {'files': files, 'rights_confirmed': rightsConfirmed},
     );
   }
 
@@ -221,11 +224,13 @@ class QuizApiService {
         final rawIssues = detail['issues'];
         final issues = rawIssues is List
             ? rawIssues
-                .whereType<Map>()
-                .map((item) => CorpusImportIssue.fromJson(
+                  .whereType<Map>()
+                  .map(
+                    (item) => CorpusImportIssue.fromJson(
                       Map<String, dynamic>.from(item),
-                    ))
-                .toList(growable: false)
+                    ),
+                  )
+                  .toList(growable: false)
             : const <CorpusImportIssue>[];
         return QuizApiException(
           detail['message']?.toString() ?? 'HTTP ${response.statusCode}',

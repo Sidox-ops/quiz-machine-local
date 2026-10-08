@@ -84,6 +84,7 @@ class RagIndex:
             refresh_hours=MICROSOFT_LEARN_CORPUS_REFRESH_HOURS,
         )
         self._knowledge_ready = False
+        self._knowledge_checked = False
         self._generation_status_cache: dict[str, dict] = {}
         self.items: list[dict] = []
         if path.exists():
@@ -789,8 +790,13 @@ class RagIndex:
 
     def test_knowledge_provider(self) -> None:
         if self.microsoft_learn is not None:
+            self._knowledge_checked = True
             self.microsoft_learn.test_connection()
             self._knowledge_ready = True
+
+    @property
+    def knowledge_check_completed(self) -> bool:
+        return not self.uses_microsoft_learn or self._knowledge_checked
 
     @property
     def knowledge_ready(self) -> bool:

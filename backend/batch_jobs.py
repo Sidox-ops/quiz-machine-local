@@ -95,6 +95,13 @@ class BatchJobManager:
             job = self._jobs.get(job_id)
             return deepcopy(job) if job else None
 
+    def has_active_jobs(self) -> bool:
+        with self._lock:
+            return any(
+                job["status"] not in {"completed", "failed", "cancelled"}
+                for job in self._jobs.values()
+            )
+
     def cancel(self, job_id: str) -> dict | None:
         with self._lock:
             job = self._jobs.get(job_id)

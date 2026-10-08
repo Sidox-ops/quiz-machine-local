@@ -6,7 +6,7 @@ from unittest.mock import patch
 from fastapi import HTTPException
 
 from backend import api
-from backend.schemas import MarkdownCorpusBatchImportRequest
+from backend.schemas import MarkdownCorpusBatchImportRequest, ModelSelectionRequest
 
 
 def _markdown(document_id: str, title: str = "Evaluation notes") -> str:
@@ -33,6 +33,28 @@ class _ModelClient:
             raise AssertionError("Markdown import must require the embedding model.")
 
 
+class _SelectionClient:
+    def __init__(self):
+        self.selected = ""
+
+    def list_model_details(self) -> list[str]:
+        return ["installed-model"]
+
+    def set_selected_model(self, model: str, inventory: list[str]) -> str:
+        if inventory != ["installed-model"]:
+            raise AssertionError("The installed inventory must be validated.")
+        self.selected = model
+        return model
+
+
+class _Batches:
+    def __init__(self, active: bool):
+        self.active = active
+
+    def has_active_jobs(self) -> bool:
+        return self.active
+
+
 class _Rag:
     def __init__(self, error: Exception | None = None):
         self.error = error
@@ -50,6 +72,30 @@ class _Rag:
 
 
 class CorpusApiTests(unittest.TestCase):
+    def test_model_selection_is_persisted_after_inventory_validation(self) -> None:
+        client = _SelectionClient()
+        request = ModelSelectionRequest(model="qwen3:8b")
+        with (
+            patch.object(api, "client", client),
+            patch.object(api, "batches", _Batches(active=False)),
+            patch.object(
+                api,
+                "diagnostics",
+                return_value={"llm_model": "qwen3:8b", "llm_ready": True},
+            ),
+        ):
+            response = api.select_system_model(request)
+
+        self.assertEqual(client.selected, "qwen3:8b")
+        self.assertTrue(response["llm_ready"])
+
+    def test_model_selection_is_blocked_during_generation(self) -> None:
+        with patch.object(api, "batches", _Batches(active=True)):
+            with self.assertRaises(HTTPException) as raised:
+                api.select_system_model(ModelSelectionRequest(model="qwen3:8b"))
+
+        self.assertEqual(raised.exception.status_code, 409)
+
     def test_batch_import_writes_all_files_and_builds_once(self) -> None:
         request = MarkdownCorpusBatchImportRequest.model_validate({
             "rights_confirmed": True,

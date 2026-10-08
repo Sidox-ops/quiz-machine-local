@@ -31,6 +31,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   bool _termsAccepted = false;
   bool _busy = false;
   SystemDiagnostics? _diagnostics;
+  String? _selectedModel;
   String? _status;
   String? _error;
 
@@ -79,8 +80,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
       key: const ValueKey('legal'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Before you begin',
-            style: Theme.of(context).textTheme.headlineMedium),
+        Text(
+          'Before you begin',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Quiz Machine is an independent educational tool. It runs locally, '
@@ -153,6 +156,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
           'content from Microsoft Learn when you generate a session.',
           style: Theme.of(context).textTheme.bodyLarge,
         ),
+        const SizedBox(height: AppSpacing.md),
+        const _InfoBand(
+          icon: Icons.download_done_outlined,
+          title: 'Installed models only',
+          body: 'Quiz Machine detects models already available in Ollama. '
+              'It never downloads or replaces a model during onboarding.',
+        ),
         const SizedBox(height: AppSpacing.lg),
         if (diagnostics != null) ...[
           _CheckRow(
@@ -168,24 +178,69 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 : 'Not installed',
             ok: diagnostics.ollamaInstalled && diagnostics.ollamaReachable,
           ),
-          _CheckRow(
-            label: diagnostics.llmModel,
-            detail: diagnostics.llmReady ? 'Ready' : 'Download required',
-            ok: diagnostics.llmReady,
-          ),
+          if (diagnostics.ollamaReachable &&
+              diagnostics.compatibleModels.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<String>(
+              key: ValueKey(_selectedModel),
+              initialValue: _selectedModel,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Local generation model',
+                prefixIcon: Icon(Icons.memory_outlined),
+              ),
+              items: diagnostics.compatibleModels
+                  .map(
+                    (model) => DropdownMenuItem<String>(
+                      value: model.name,
+                      child: Text(
+                        model.recommended
+                            ? '${model.name} (recommended)'
+                            : model.name,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: _busy || diagnostics.modelSelectionLocked
+                  ? null
+                  : (value) => setState(() => _selectedModel = value),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _modelDescription(diagnostics),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ] else if (diagnostics.ollamaReachable)
+            _CheckRow(
+              label: 'Local generation model',
+              detail: 'No compatible installed model detected',
+              ok: false,
+              warning: true,
+            ),
+          if (diagnostics.modelSelectionLocked)
+            const Padding(
+              padding: EdgeInsets.only(top: AppSpacing.xs),
+              child: Text('Model selection is locked by AI103_LLM_MODEL.'),
+            ),
           if (diagnostics.usesMicrosoftLearn)
             _CheckRow(
               label: 'Microsoft Learn',
-              detail: diagnostics.knowledgeReady
-                  ? 'Official online courses enabled'
-                  : 'Connection required',
-              ok: diagnostics.knowledgeReady,
+              detail: diagnostics.knowledgeCheckCompleted &&
+                      diagnostics.knowledgeReady
+                  ? 'Connection checked'
+                  : diagnostics.knowledgeReady
+                      ? 'Cached courses found; connection check required'
+                      : 'Connection check required',
+              ok: diagnostics.knowledgeCheckCompleted &&
+                  diagnostics.knowledgeReady,
             )
           else ...[
             _CheckRow(
               label: diagnostics.embeddingModel,
-              detail:
-                  diagnostics.embeddingReady ? 'Ready' : 'Download required',
+              detail: diagnostics.embeddingReady
+                  ? 'Ready'
+                  : 'Not installed in Ollama',
               ok: diagnostics.embeddingReady,
             ),
             _CheckRow(
@@ -206,8 +261,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
         ],
         if (_error != null) ...[
           const SizedBox(height: AppSpacing.md),
-          Text(_error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
         ],
         const SizedBox(height: AppSpacing.lg),
         Wrap(
@@ -222,6 +279,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 label: const Text('Get Ollama'),
               ),
             if (diagnostics != null &&
+                diagnostics.ollamaReachable &&
+                diagnostics.compatibleModels.isEmpty)
+              OutlinedButton.icon(
+                onPressed: _busy ? null : _openOllamaLibrary,
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Browse Ollama models'),
+              ),
+            if (diagnostics != null &&
                 diagnostics.ollamaInstalled &&
                 !diagnostics.ollamaReachable)
               OutlinedButton.icon(
@@ -234,12 +299,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
               icon: const Icon(Icons.refresh),
               label: const Text('Check again'),
             ),
-            if (diagnostics != null && !diagnostics.ready)
+            if (diagnostics != null &&
+                !diagnostics.modelSelectionLocked &&
+                _selectedModel != null &&
+                diagnostics.llmModel != _selectedModel)
               FilledButton.icon(
-                onPressed:
-                    _busy || !diagnostics.ollamaInstalled ? null : _prepare,
-                icon: const Icon(Icons.download_outlined),
-                label: const Text('Prepare automatically'),
+                onPressed: _busy ? null : () => _selectModel(_selectedModel!),
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('Use selected model'),
+              )
+            else if (diagnostics != null &&
+                diagnostics.llmReady &&
+                !diagnostics.ready)
+              FilledButton.icon(
+                onPressed: _busy ? null : _prepare,
+                icon: const Icon(Icons.verified_outlined),
+                label: const Text('Verify services'),
               ),
             if (diagnostics?.ready == true)
               FilledButton.icon(
@@ -258,12 +333,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
       key: const ValueKey('corpus'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Choose your material',
-            style: Theme.of(context).textTheme.headlineMedium),
+        Text(
+          'Choose your material',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Choose a Microsoft certification in the next screen. Official Learn '
-          'courses will ground the QCM while inference remains on this Mac.',
+          'courses will ground the QCM while inference remains on this computer.',
           style: Theme.of(context).textTheme.bodyLarge,
         ),
         const SizedBox(height: AppSpacing.lg),
@@ -304,10 +381,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     try {
       final result = await widget.repository.diagnostics();
       if (!mounted) return;
-      setState(() {
-        _diagnostics = result;
-        _status = null;
-      });
+      _applyDiagnostics(result, status: null);
     } catch (exception) {
       if (mounted) setState(() => _error = exception.toString());
     } finally {
@@ -325,10 +399,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         if (mounted) setState(() => _status = status.message);
       });
       if (!mounted) return;
-      setState(() {
-        _diagnostics = result;
-        _status = 'Ready.';
-      });
+      _applyDiagnostics(result, status: 'Ready.');
     } catch (exception) {
       if (mounted) setState(() => _error = exception.toString());
     } finally {
@@ -336,13 +407,63 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
+  Future<void> _selectModel(String model) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+      _status = 'Selecting $model...';
+    });
+    try {
+      final result = await widget.repository.selectModel(model);
+      if (!mounted) return;
+      _applyDiagnostics(result, status: '$model selected.');
+    } catch (exception) {
+      if (mounted) setState(() => _error = exception.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _applyDiagnostics(SystemDiagnostics result, {required String? status}) {
+    final compatibleNames =
+        result.compatibleModels.map((model) => model.name).toSet();
+    final preferred = compatibleNames.contains(result.llmModel)
+        ? result.llmModel
+        : compatibleNames.contains(_selectedModel)
+            ? _selectedModel
+            : compatibleNames.contains(result.recommendedLlmModel)
+                ? result.recommendedLlmModel
+                : result.compatibleModels.isEmpty
+                    ? null
+                    : result.compatibleModels.first.name;
+    setState(() {
+      _diagnostics = result;
+      _selectedModel = preferred;
+      _status = status;
+    });
+  }
+
+  String _modelDescription(SystemDiagnostics diagnostics) {
+    final matches = diagnostics.compatibleModels
+        .where((model) => model.name == _selectedModel)
+        .toList(growable: false);
+    final selected = matches.isEmpty ? null : matches.first;
+    if (selected == null) return 'Choose an installed local chat model.';
+    final prefix = selected.recommended
+        ? 'Recommended because it is the largest compatible installed model.'
+        : 'Installed compatible model.';
+    return '$prefix ${selected.summary}';
+  }
+
   Future<void> _importCorpus() async {
     final summary = await CorpusImportDialog.show(context, widget.repository);
     if (!mounted || summary == null) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content:
-              Text('${summary.title}: ${summary.chunkCount} chunks imported.')),
+        content: Text(
+          '${summary.title}: ${summary.chunkCount} chunks imported.',
+        ),
+      ),
     );
     await _refresh();
   }
@@ -361,6 +482,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
+  Future<void> _openOllamaLibrary() =>
+      _openExternalUrl('https://ollama.com/library');
+
+  Future<void> _openExternalUrl(String url) async {
+    if (Platform.isMacOS) {
+      await Process.run('open', [url]);
+    } else if (Platform.isWindows) {
+      await Process.run('cmd', ['/c', 'start', '', url]);
+    }
+  }
+
   Future<void> _startOllama() async {
     setState(() {
       _busy = true;
@@ -372,10 +504,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
         await Process.run('open', ['-a', 'Ollama']);
       } else if (Platform.isWindows) {
         await Process.start(
-          'ollama',
-          const ['serve'],
-          mode: ProcessStartMode.detached,
-        );
+            'ollama',
+            const [
+              'serve',
+            ],
+            mode: ProcessStartMode.detached);
       }
       await Future<void>.delayed(const Duration(seconds: 3));
       await _refresh();
@@ -417,8 +550,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
 }
 
 class _InfoBand extends StatelessWidget {
-  const _InfoBand(
-      {required this.icon, required this.title, required this.body});
+  const _InfoBand({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
 
   final IconData icon;
   final String title;
@@ -482,16 +618,17 @@ class _CheckRow extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-              ok
-                  ? Icons.check_circle
-                  : warning
-                      ? Icons.warning
-                      : Icons.cancel,
-              color: color),
+            ok
+                ? Icons.check_circle
+                : warning
+                    ? Icons.warning
+                    : Icons.cancel,
+            color: color,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-              child:
-                  Text(label, style: Theme.of(context).textTheme.titleMedium)),
+            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+          ),
           const SizedBox(width: AppSpacing.sm),
           Flexible(child: Text(detail, textAlign: TextAlign.end)),
         ],

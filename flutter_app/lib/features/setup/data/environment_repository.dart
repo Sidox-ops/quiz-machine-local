@@ -11,6 +11,8 @@ abstract interface class EnvironmentRepository {
 
   Future<SystemDiagnostics> prepare(SetupProgress onProgress);
 
+  Future<SystemDiagnostics> selectModel(String model);
+
   Future<CorpusSummary> importCorpus({
     required String filename,
     required String jsonContent,
@@ -62,6 +64,11 @@ class RemoteEnvironmentRepository implements EnvironmentRepository {
       if (status.completed) return diagnostics();
       await Future<void>.delayed(const Duration(milliseconds: 800));
     }
+  }
+
+  @override
+  Future<SystemDiagnostics> selectModel(String model) async {
+    return SystemDiagnostics.fromJson(await _service.selectModel(model));
   }
 
   @override
@@ -128,10 +135,7 @@ class RemoteEnvironmentRepository implements EnvironmentRepository {
     }
     final response = await _service.importMarkdownCorpora(
       files: files
-          .map((file) => {
-                'filename': file.filename,
-                'content': file.content,
-              })
+          .map((file) => {'filename': file.filename, 'content': file.content})
           .toList(growable: false),
       rightsConfirmed: rightsConfirmed,
     );
@@ -147,9 +151,7 @@ class RemoteEnvironmentRepository implements EnvironmentRepository {
 
   void _checkMarkdownSize(String content) {
     if (utf8.encode(content).length > 5 * 1024 * 1024) {
-      throw const QuizApiException(
-        'The corpus exceeds the 5 MB import limit.',
-      );
+      throw const QuizApiException('The corpus exceeds the 5 MB import limit.');
     }
   }
 }

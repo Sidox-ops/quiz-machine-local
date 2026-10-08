@@ -9,7 +9,7 @@ from pathlib import Path
 
 from requests import RequestException
 
-from .config import DEFAULT_LLM_MODEL, EMBEDDING_MODEL, LLM_MODEL, STORAGE_DIR
+from .config import EMBEDDING_MODEL, STORAGE_DIR
 from .ollama_client import OllamaClient, OllamaError, model_matches
 from .rag import RagIndex
 
@@ -31,16 +31,20 @@ def find_ollama() -> str | None:
 def diagnostics(client: OllamaClient, rag: RagIndex) -> dict:
     executable = find_ollama()
     try:
-        models = client.list_models()
+        inventory = client.list_model_details()
         api_reachable = True
     except OllamaError:
-        models = []
+        inventory = []
         api_reachable = False
+
+    models = [model.name for model in inventory]
 
     def has_model(required: str) -> bool:
         return any(model_matches(required, name) for name in models)
 
-    selected_llm_model = client.select_llm_model(models) if api_reachable else (LLM_MODEL or DEFAULT_LLM_MODEL)
+    selected_llm_model = client.configured_model()
+    recommended_llm_model = client.recommend_model(inventory)
+    selected_info = client.selected_model_info(selected_llm_model, inventory)
 
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     free_bytes = shutil.disk_usage(STORAGE_DIR).free
@@ -50,7 +54,17 @@ def diagnostics(client: OllamaClient, rag: RagIndex) -> dict:
         "ollama_installed": executable is not None,
         "ollama_reachable": api_reachable,
         "llm_model": selected_llm_model,
-        "llm_ready": has_model(selected_llm_model),
+        "llm_model_selected": bool(selected_llm_model),
+        "llm_ready": bool(selected_info and selected_info.compatible),
+        "recommended_llm_model": recommended_llm_model or "",
+        "model_selection_locked": client.selection_locked,
+        "ollama_models": [
+            model.public_payload(
+                selected=model == selected_info,
+                recommended=model.name == recommended_llm_model,
+            )
+            for model in inventory
+        ],
         "embedding_model": EMBEDDING_MODEL,
         "embedding_ready": (
             not rag.requires_local_embeddings or has_model(EMBEDDING_MODEL)
@@ -59,6 +73,7 @@ def diagnostics(client: OllamaClient, rag: RagIndex) -> dict:
         "indexed_chunks": rag.indexed_chunk_count,
         "knowledge_provider": rag.knowledge_provider,
         "knowledge_ready": rag.knowledge_ready,
+        "knowledge_check_completed": rag.knowledge_check_completed,
         "free_disk_bytes": free_bytes,
         "recommended_free_bytes": RECOMMENDED_FREE_BYTES,
         "disk_ready": free_bytes >= RECOMMENDED_FREE_BYTES,
@@ -123,20 +138,31 @@ class SetupManager:
                 else:
                     raise RuntimeError("Ollama did not start within 30 seconds.")
 
-            models = self.client.list_models()
+            inventory = self.client.list_model_details()
+            models = [model.name for model in inventory]
             if (
                 self.rag.requires_local_embeddings
                 and not any(model_matches(EMBEDDING_MODEL, name) for name in models)
             ):
-                self._update("running", "models", f"Downloading embedding model: {EMBEDDING_MODEL}")
-                self.client.pull_model(EMBEDDING_MODEL)
+                raise RuntimeError(
+                    f"The local corpus requires the installed embedding model "
+                    f"{EMBEDDING_MODEL}. Install it in Ollama, then check again. "
+                    "Quiz Machine does not download models automatically."
+                )
 
-            models = self.client.list_models()
-            selected_llm = self.client.select_llm_model(models)
-            llm_available = any(model_matches(selected_llm, name) for name in models)
-            if not llm_available:
-                self._update("running", "models", f"Downloading quiz model: {selected_llm}")
-                self.client.pull_model(selected_llm)
+            selected_llm = self.client.configured_model()
+            if not selected_llm:
+                raise RuntimeError(
+                    "Choose one of the installed local Ollama models before "
+                    "verifying the environment."
+                )
+            selected_info = self.client.selected_model_info(selected_llm, inventory)
+            if selected_info is None:
+                raise RuntimeError(
+                    f"The selected Ollama model is no longer installed: {selected_llm}"
+                )
+            if not selected_info.compatible:
+                raise RuntimeError(selected_info.compatibility_reason)
 
             if self.rag.uses_microsoft_learn:
                 self._update(

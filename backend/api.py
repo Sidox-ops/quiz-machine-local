@@ -32,6 +32,7 @@ from .schemas import (
     CorpusValidationResponse,
     MarkdownCorpusImportRequest,
     MarkdownCorpusBatchImportRequest,
+    ModelSelectionRequest,
     NextQuestionRequest,
     ProgressResetRequest,
     PublicQuestion,
@@ -62,12 +63,14 @@ async def require_session_token(request: Request, call_next):
 @app.get("/health")
 def health() -> dict:
     try:
-        models = client.list_models()
+        models = client.list_model_details()
+        selected = client.configured_model()
         return {
             "ok": True,
-            "llm_model": client.select_llm_model(models),
+            "llm_model": selected,
+            "recommended_llm_model": client.recommend_model(models) or "",
             "embedding_model": EMBEDDING_MODEL,
-            "ollama_models": models,
+            "ollama_models": [model.name for model in models],
             "knowledge_provider": rag.knowledge_provider,
             "index_ready": rag.knowledge_ready,
             "indexed_chunks": rag.indexed_chunk_count,
@@ -89,6 +92,21 @@ def start_setup() -> SetupStartResponse:
 @app.get("/system/setup", response_model=SetupStatusResponse)
 def setup_status() -> SetupStatusResponse:
     return SetupStatusResponse.model_validate(setup.state())
+
+
+@app.post("/system/model")
+def select_system_model(request: ModelSelectionRequest) -> dict:
+    if batches.has_active_jobs():
+        raise HTTPException(
+            status_code=409,
+            detail="The local model cannot change while a quiz batch is running.",
+        )
+    try:
+        inventory = client.list_model_details()
+        client.set_selected_model(request.model.strip(), inventory)
+        return diagnostics(client, rag)
+    except OllamaError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.post("/corpus/validate", response_model=CorpusValidationResponse)

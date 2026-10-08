@@ -67,6 +67,8 @@ package-licence report with each bundle.
   private corpus, question bank, progress, log, build cache, or Graphify output;
 - verify Ollama installation, model selection, Microsoft Learn preparation, and
   Markdown import in an isolated test profile;
+- confirm onboarding and `start.sh` never download a generation or embedding
+  model, including when no compatible model is installed;
 - sign and scan the exact release artifacts;
 - compare published SHA-256 hashes after downloading them;
 - verify the immutable source tag is available beside the binary;

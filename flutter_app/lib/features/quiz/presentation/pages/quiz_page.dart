@@ -6,6 +6,7 @@ import '../../../../core/design_system/molecules/score_summary.dart';
 import '../../data/quiz_repository.dart';
 import '../../../setup/data/environment_repository.dart';
 import '../../../setup/presentation/corpus_import_dialog.dart';
+import '../../../setup/presentation/model_selection_dialog.dart';
 import '../organisms/generation_panel.dart';
 import '../organisms/quiz_error_banner.dart';
 import '../organisms/quiz_question_panel.dart';
@@ -80,14 +81,23 @@ class _QuizPageState extends State<QuizPage> {
               ),
               if (widget.environmentRepository != null)
                 IconButton(
+                  onPressed: _viewModel.stage == QuizStage.generating
+                      ? null
+                      : _showModelSettings,
+                  tooltip: 'Local model',
+                  icon: const Icon(Icons.memory_outlined),
+                ),
+              if (widget.environmentRepository != null)
+                IconButton(
                   onPressed: _importCorpus,
                   tooltip: 'Import corpus',
                   icon: const Icon(Icons.folder_open_outlined),
                 ),
               if (!isNarrow)
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                  ),
                   child: Center(
                     child: ScoreSummary(
                       progress: _viewModel.progress,
@@ -132,34 +142,34 @@ class _QuizPageState extends State<QuizPage> {
     final stateContent = switch (_viewModel.stage) {
       QuizStage.loading => const LoadingPanel(key: ValueKey('loading')),
       QuizStage.ready => ReadyPanel(
-          key: const ValueKey('ready'),
-          progress: _viewModel.progress,
-        ),
+        key: const ValueKey('ready'),
+        progress: _viewModel.progress,
+      ),
       QuizStage.generating => GenerationPanel(
-          key: const ValueKey('generating'),
-          completed: _viewModel.generatedCount,
-          total: _viewModel.generationTotal,
-          attempts: _viewModel.generationAttempts,
-          rejected: _viewModel.generationRejected,
-          reused: _viewModel.generationReused,
-          phase: _viewModel.generationPhase,
-          corpusCompleted: _viewModel.corpusCompleted,
-          corpusTotal: _viewModel.corpusTotal,
-          corpusAttempts: _viewModel.corpusAttempts,
-          corpusRetries: _viewModel.corpusRetries,
-          message: _viewModel.generationMessage,
-          cancelling: _viewModel.cancellingGeneration,
-          onCancel: _viewModel.cancelGeneration,
-        ),
+        key: const ValueKey('generating'),
+        completed: _viewModel.generatedCount,
+        total: _viewModel.generationTotal,
+        attempts: _viewModel.generationAttempts,
+        rejected: _viewModel.generationRejected,
+        reused: _viewModel.generationReused,
+        phase: _viewModel.generationPhase,
+        corpusCompleted: _viewModel.corpusCompleted,
+        corpusTotal: _viewModel.corpusTotal,
+        corpusAttempts: _viewModel.corpusAttempts,
+        corpusRetries: _viewModel.corpusRetries,
+        message: _viewModel.generationMessage,
+        cancelling: _viewModel.cancellingGeneration,
+        onCancel: _viewModel.cancelGeneration,
+      ),
       QuizStage.active => QuizQuestionPanel(
-          key: ValueKey(_viewModel.currentQuestion?.questionId),
-          viewModel: _viewModel,
-        ),
+        key: ValueKey(_viewModel.currentQuestion?.questionId),
+        viewModel: _viewModel,
+      ),
       QuizStage.complete => CompletePanel(
-          key: const ValueKey('complete'),
-          progress: _viewModel.progress,
-          onContinue: _viewModel.prepareNewQuiz,
-        ),
+        key: const ValueKey('complete'),
+        progress: _viewModel.progress,
+        onContinue: _viewModel.prepareNewQuiz,
+      ),
     };
 
     return Column(
@@ -210,7 +220,8 @@ class _QuizPageState extends State<QuizPage> {
       context: context,
       applicationName: 'Quiz Machine',
       applicationVersion: '0.1.0',
-      applicationLegalese: 'Copyright 2026 Quiz Machine publisher.\n'
+      applicationLegalese:
+          'Copyright 2026 Quiz Machine publisher.\n'
           'Independent educational tool. Not affiliated with Microsoft.',
       children: const [
         SizedBox(height: AppSpacing.sm),
@@ -231,8 +242,22 @@ class _QuizPageState extends State<QuizPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content:
-              Text('${summary.title}: ${summary.chunkCount} chunks imported.')),
+        content: Text(
+          '${summary.title}: ${summary.chunkCount} chunks imported.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showModelSettings() async {
+    final repository = widget.environmentRepository;
+    if (repository == null) return;
+    final selected = await ModelSelectionDialog.show(context, repository);
+    if (!mounted || selected == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$selected will be used for future question generation.'),
+      ),
     );
   }
 

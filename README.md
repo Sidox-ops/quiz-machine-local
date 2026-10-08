@@ -41,12 +41,18 @@ display and scoring.
 - macOS or Windows for the supported desktop experience;
 - Python 3.10 or newer;
 - Flutter with desktop support;
-- Ollama;
+- Ollama with at least one local text-generation model already installed;
 - `curl`.
 
-The default chat model is `gemma4:e4b-mlx`. It can require roughly 10 GB of disk
-space. Select another installed model with `AI103_LLM_MODEL` when necessary.
-The legacy offline AI-103 mode also uses `nomic-embed-text` by default.
+On first launch, the app inventories the models already available through the
+local Ollama API. It excludes embedding-only and cloud-backed entries, recommends
+the largest compatible installed model, and asks the user to confirm the choice.
+No model is downloaded or replaced by Quiz Machine. The choice can be changed
+later from the quiz workspace; `AI103_LLM_MODEL` remains available as a locked
+developer or administrator override.
+
+The legacy offline AI-103 mode additionally requires `nomic-embed-text` by
+default. That embedding model must also be installed explicitly before launch.
 
 ## Run locally
 
@@ -59,8 +65,9 @@ Check the existing toolchain and start the complete development stack:
 
 The setup script creates `.venv`, installs the pinned Python dependencies when
 needed, prepares the Flutter desktop runner, starts the loopback backend, and
-launches Flutter. `start.sh` may download a missing Ollama model after the user
-explicitly starts that command.
+launches Flutter. Onboarding then verifies Ollama, lets the user select an
+installed generation model, and checks the Microsoft Learn connection. Neither
+`start.sh` nor onboarding downloads Ollama models.
 
 To run the services separately:
 

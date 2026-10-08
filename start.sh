@@ -39,27 +39,30 @@ if ! curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
   exit 1
 fi
 
-ensure_model() {
+require_model() {
   local model="$1"
   if ! ollama show "$model" >/dev/null 2>&1; then
-    echo "Pulling Ollama model: $model"
-    ollama pull "$model"
+    echo "Missing Ollama model: $model"
+    echo "Install it explicitly in Ollama, then run this command again."
+    return 1
   fi
 }
 
 EMBEDDING_MODEL="${AI103_EMBEDDING_MODEL:-nomic-embed-text}"
-DEFAULT_LLM_MODEL="${AI103_DEFAULT_LLM_MODEL:-gemma4:e4b-mlx}"
-LLM_MODEL="${AI103_LLM_MODEL:-$DEFAULT_LLM_MODEL}"
+LLM_MODEL="${AI103_LLM_MODEL:-}"
 KNOWLEDGE_PROVIDER="${AI103_KNOWLEDGE_PROVIDER:-microsoft_learn_mcp}"
 export AI103_KNOWLEDGE_PROVIDER="$KNOWLEDGE_PROVIDER"
 
 if [[ "$KNOWLEDGE_PROVIDER" != "microsoft_learn_mcp" ]]; then
-  ensure_model "$EMBEDDING_MODEL"
+  require_model "$EMBEDDING_MODEL"
 fi
 
-ensure_model "$LLM_MODEL"
-echo "Using Ollama quiz model: $LLM_MODEL"
-export AI103_LLM_MODEL="$LLM_MODEL"
+if [[ -n "$LLM_MODEL" ]]; then
+  require_model "$LLM_MODEL"
+  echo "Using Ollama quiz model locked by AI103_LLM_MODEL: $LLM_MODEL"
+else
+  echo "Quiz Machine will use the installed model selected in the app."
+fi
 
 if [[ "$KNOWLEDGE_PROVIDER" == "microsoft_learn_mcp" ]]; then
   echo "Using official Microsoft Learn courses for quiz grounding."

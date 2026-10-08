@@ -1,6 +1,72 @@
 import 'package:flutter/foundation.dart';
 
 @immutable
+class LocalModelInfo {
+  const LocalModelInfo({
+    required this.name,
+    required this.size,
+    required this.compatible,
+    required this.compatibilityReason,
+    this.digest = '',
+    this.family = '',
+    this.parameterSize = '',
+    this.quantizationLevel = '',
+    this.capabilities = const [],
+    this.contextLength,
+    this.license = '',
+    this.selected = false,
+    this.recommended = false,
+  });
+
+  final String name;
+  final String digest;
+  final int size;
+  final String family;
+  final String parameterSize;
+  final String quantizationLevel;
+  final List<String> capabilities;
+  final int? contextLength;
+  final String license;
+  final bool compatible;
+  final String compatibilityReason;
+  final bool selected;
+  final bool recommended;
+
+  double get sizeGb => size / (1024 * 1024 * 1024);
+
+  String get summary {
+    final parts = <String>[
+      if (parameterSize.isNotEmpty) parameterSize,
+      if (quantizationLevel.isNotEmpty) quantizationLevel,
+      if (size > 0) '${sizeGb.toStringAsFixed(1)} GB',
+    ];
+    return parts.isEmpty ? compatibilityReason : parts.join(' • ');
+  }
+
+  factory LocalModelInfo.fromJson(Map<String, dynamic> json) {
+    final rawCapabilities = json['capabilities'];
+    return LocalModelInfo(
+      name: json['name']?.toString() ?? '',
+      digest: json['digest']?.toString() ?? '',
+      size: (json['size'] as num?)?.toInt() ?? 0,
+      family: json['family']?.toString() ?? '',
+      parameterSize: json['parameter_size']?.toString() ?? '',
+      quantizationLevel: json['quantization_level']?.toString() ?? '',
+      capabilities: rawCapabilities is List
+          ? rawCapabilities.map((value) => value.toString()).toList()
+          : const [],
+      contextLength: (json['context_length'] as num?)?.toInt(),
+      license: json['license']?.toString() ?? '',
+      compatible: json['compatible'] == true,
+      compatibilityReason:
+          json['compatibility_reason']?.toString() ?? 'Compatibility unknown.',
+      selected: json['selected'] == true,
+      recommended: json['recommended'] == true,
+    );
+  }
+}
+
+@immutable
 class SystemDiagnostics {
   const SystemDiagnostics({
     required this.platform,
@@ -15,9 +81,13 @@ class SystemDiagnostics {
     required this.indexedChunks,
     this.knowledgeProvider = 'local',
     this.knowledgeReady = false,
+    this.knowledgeCheckCompleted = false,
     required this.freeDiskBytes,
     required this.recommendedFreeBytes,
     required this.diskReady,
+    this.ollamaModels = const [],
+    this.recommendedLlmModel = '',
+    this.modelSelectionLocked = false,
   });
 
   final String platform;
@@ -32,9 +102,13 @@ class SystemDiagnostics {
   final int indexedChunks;
   final String knowledgeProvider;
   final bool knowledgeReady;
+  final bool knowledgeCheckCompleted;
   final int freeDiskBytes;
   final int recommendedFreeBytes;
   final bool diskReady;
+  final List<LocalModelInfo> ollamaModels;
+  final String recommendedLlmModel;
+  final bool modelSelectionLocked;
 
   bool get ready =>
       ollamaInstalled &&
@@ -42,6 +116,7 @@ class SystemDiagnostics {
       llmReady &&
       (usesMicrosoftLearn
           ? knowledgeReady &&
+              knowledgeCheckCompleted &&
               (knowledgeProvider != 'hybrid' || embeddingReady && indexReady)
           : embeddingReady && indexReady);
 
@@ -51,7 +126,11 @@ class SystemDiagnostics {
 
   double get freeDiskGb => freeDiskBytes / (1024 * 1024 * 1024);
 
+  List<LocalModelInfo> get compatibleModels =>
+      ollamaModels.where((model) => model.compatible).toList(growable: false);
+
   factory SystemDiagnostics.fromJson(Map<String, dynamic> json) {
+    final rawModels = json['ollama_models'];
     return SystemDiagnostics(
       platform: json['platform']?.toString() ?? 'Unknown',
       architecture: json['architecture']?.toString() ?? 'Unknown',
@@ -65,10 +144,22 @@ class SystemDiagnostics {
       indexedChunks: (json['indexed_chunks'] as num?)?.toInt() ?? 0,
       knowledgeProvider: json['knowledge_provider']?.toString() ?? 'local',
       knowledgeReady: json['knowledge_ready'] == true,
+      knowledgeCheckCompleted: json['knowledge_check_completed'] == true,
       freeDiskBytes: (json['free_disk_bytes'] as num?)?.toInt() ?? 0,
       recommendedFreeBytes:
           (json['recommended_free_bytes'] as num?)?.toInt() ?? 0,
       diskReady: json['disk_ready'] == true,
+      ollamaModels: rawModels is List
+          ? rawModels
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    LocalModelInfo.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList(growable: false)
+          : const [],
+      recommendedLlmModel: json['recommended_llm_model']?.toString() ?? '',
+      modelSelectionLocked: json['model_selection_locked'] == true,
     );
   }
 }

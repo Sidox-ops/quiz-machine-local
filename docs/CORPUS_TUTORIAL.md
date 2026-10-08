@@ -14,7 +14,8 @@ ollama serve
 
 The workspace offers AI-901, AI-103 and AI-200. Microsoft Learn MCP supplies
 official scoped evidence; imported notes supplement it and remain on this
-computer.
+computer. During onboarding, select one of the local generation models already
+installed in Ollama. Quiz Machine does not download a model automatically.
 
 ## 2. Choose material you may use
 
