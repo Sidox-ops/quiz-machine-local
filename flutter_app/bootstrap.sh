@@ -11,7 +11,7 @@ cp pubspec.yaml "$TMP_DIR/pubspec.yaml"
 cp analysis_options.yaml "$TMP_DIR/analysis_options.yaml"
 cp lib/main.dart "$TMP_DIR/main.dart"
 
-flutter create --project-name ai103_quiz_ui --platforms=macos,windows,linux .
+flutter create --project-name quiz_machine_local --platforms=macos,windows,linux .
 
 cp "$TMP_DIR/pubspec.yaml" pubspec.yaml
 cp "$TMP_DIR/analysis_options.yaml" analysis_options.yaml

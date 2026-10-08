@@ -1,6 +1,6 @@
-import 'package:ai103_quiz_ui/features/quiz/data/quiz_repository.dart';
-import 'package:ai103_quiz_ui/features/quiz/domain/quiz_models.dart';
-import 'package:ai103_quiz_ui/features/quiz/presentation/view_models/quiz_view_model.dart';
+import 'package:quiz_machine_local/features/quiz/data/quiz_repository.dart';
+import 'package:quiz_machine_local/features/quiz/domain/quiz_models.dart';
+import 'package:quiz_machine_local/features/quiz/presentation/view_models/quiz_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes/fake_quiz_repository.dart';

@@ -8,6 +8,8 @@ versioning for public releases.
 
 ### Added
 
+- AI-300 and AI-500 certification paths backed by their Microsoft Learn study
+  guides;
 - local discovery and explicit selection of installed Ollama generation models;
 - hardware-aware model recommendation and a structured-output compatibility
   probe before selection;
@@ -20,6 +22,9 @@ versioning for public releases.
 
 ### Changed
 
+- historical certification-specific application configuration now uses the
+  neutral `QUIZ_MACHINE_*` namespace;
+- README product previews now use readable, deterministic Flutter captures;
 - onboarding explicitly confirms that Quiz Machine never downloads or replaces
   models;
 - release scripts now read the shared application version and refuse unsigned

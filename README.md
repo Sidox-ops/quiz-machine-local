@@ -29,10 +29,19 @@ Quiz Machine Local is an open-source desktop study application for Microsoft
 AI certifications. It turns certification-scoped learning material into
 validated practice sessions using a model that already runs on your computer.
 
-The application currently supports AI-901, AI-103, and AI-200. It requires no
-account and includes no advertising, analytics, or publisher-operated backend.
+The application currently supports five Microsoft AI certification paths. It
+requires no account and includes no advertising, analytics, or
+publisher-operated backend.
 Imported corpora, generated questions, answers, and learning progress remain on
 the user's computer in the supported configuration.
+
+| Path | Focus |
+| :--- | :--- |
+| [AI-901](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-901) | AI concepts and Microsoft Foundry fundamentals |
+| [AI-103](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-103) | Building AI applications and agents on Azure |
+| [AI-200](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-200) | Developing cloud-native AI solutions on Azure |
+| [AI-300](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-300) | Operationalizing machine learning and generative AI |
+| [AI-500](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-500) | Designing and implementing production multi-agent systems |
 
 Quiz Machine is an independent educational tool. It is not affiliated with,
 endorsed by, sponsored by, or an official product of Microsoft or any
@@ -48,11 +57,16 @@ guarantee an exam result.
 ## Product preview
 
 <p align="center">
-  <img src="flutter_app/test/goldens/question_desktop.png" alt="Quiz Machine question workspace" width="74%">
-  <img src="flutter_app/test/goldens/setup_mobile.png" alt="Quiz Machine setup and local checks" width="22%">
+  <img src="flutter_app/test/goldens/question_desktop.png" alt="Quiz Machine question workspace with demonstration content" width="100%">
 </p>
 
-<p align="center"><sub>Desktop quiz workspace and responsive onboarding.</sub></p>
+<p align="center"><sub>Desktop quiz workspace with safe demonstration content.</sub></p>
+
+<p align="center">
+  <img src="flutter_app/test/goldens/setup_mobile.png" alt="Quiz Machine responsive setup and local checks" width="46%">
+</p>
+
+<p align="center"><sub>Responsive onboarding and local environment checks.</sub></p>
 
 ## What it does
 
@@ -120,8 +134,8 @@ local Ollama API. It excludes embedding-only and cloud-backed entries and
 recommends the strongest compatible model estimated to fit the machine's memory
 budget. Before saving the selection it runs a small local structured-output
 probe. No model is downloaded or replaced by Quiz Machine. The choice can be
-changed later from the quiz workspace; `AI103_LLM_MODEL` remains available as a
-locked developer or administrator override.
+changed later from the quiz workspace; `QUIZ_MACHINE_LLM_MODEL` remains
+available as a locked developer or administrator override.
 
 The model probe validates basic JSON-schema support, not educational quality.
 Model and platform expectations are documented in
@@ -196,7 +210,7 @@ Set the following value to use the legacy local AI-103 corpus/index path and
 disable Microsoft Learn retrieval:
 
 ```dotenv
-AI103_KNOWLEDGE_PROVIDER=local
+QUIZ_MACHINE_KNOWLEDGE_PROVIDER=local
 ```
 
 The import format and content-rights rules are documented in

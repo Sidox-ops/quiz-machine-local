@@ -48,10 +48,10 @@ require_model() {
   fi
 }
 
-EMBEDDING_MODEL="${AI103_EMBEDDING_MODEL:-nomic-embed-text}"
-LLM_MODEL="${AI103_LLM_MODEL:-}"
-KNOWLEDGE_PROVIDER="${AI103_KNOWLEDGE_PROVIDER:-microsoft_learn_mcp}"
-export AI103_KNOWLEDGE_PROVIDER="$KNOWLEDGE_PROVIDER"
+EMBEDDING_MODEL="${QUIZ_MACHINE_EMBEDDING_MODEL:-nomic-embed-text}"
+LLM_MODEL="${QUIZ_MACHINE_LLM_MODEL:-}"
+KNOWLEDGE_PROVIDER="${QUIZ_MACHINE_KNOWLEDGE_PROVIDER:-microsoft_learn_mcp}"
+export QUIZ_MACHINE_KNOWLEDGE_PROVIDER="$KNOWLEDGE_PROVIDER"
 
 if [[ "$KNOWLEDGE_PROVIDER" != "microsoft_learn_mcp" ]]; then
   require_model "$EMBEDDING_MODEL"
@@ -59,7 +59,7 @@ fi
 
 if [[ -n "$LLM_MODEL" ]]; then
   require_model "$LLM_MODEL"
-  echo "Using Ollama quiz model locked by AI103_LLM_MODEL: $LLM_MODEL"
+  echo "Using Ollama quiz model locked by QUIZ_MACHINE_LLM_MODEL: $LLM_MODEL"
 else
   echo "Quiz Machine will use the installed model selected in the app."
 fi

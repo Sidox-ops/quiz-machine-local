@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-from .certifications import certification
+from .certifications import CERTIFICATIONS, certification
 from .config import DATA_DIR, REFERENCE_DATA_DIR, USER_DATA_DIR
 
 
@@ -108,7 +108,7 @@ def _window_text(text: str, source: str, metadata: dict) -> list[dict]:
     return chunks
 
 
-def _parse_ai103_json(path: Path, payload: dict) -> list[dict]:
+def _parse_structured_json(path: Path, payload: dict) -> list[dict]:
     # Structured corpora with a top-level `chapters` array preserve exam domain,
     # topic and timestamp metadata for domain/chapter practice in the UI.
     raw_metadata = payload.get("metadata")
@@ -165,7 +165,7 @@ def _parse_json(path: Path) -> list[dict]:
     if isinstance(payload, dict) and payload.get("purpose") == "question_patterns":
         return []
     if isinstance(payload, dict) and isinstance(payload.get("chapters"), list):
-        return _parse_ai103_json(path, payload)
+        return _parse_structured_json(path, payload)
     if isinstance(payload, dict) and isinstance(payload.get("chunks"), list):
         validate_corpus_payload(payload)
         return _parse_generic_json(path, payload)
@@ -325,7 +325,7 @@ def validate_markdown_corpus(content: str, filename: str = "corpus.md") -> dict:
             code="invalid_document_id",
             field="document_id",
             message="The document id must contain 3 to 80 lowercase letters, numbers, dots, underscores or hyphens.",
-            hint="Example: `ai103-foundry-evaluation`.",
+            hint="Example: `quiz-machine-foundry-evaluation`.",
         ))
 
     selected = None
@@ -338,7 +338,11 @@ def validate_markdown_corpus(content: str, filename: str = "corpus.md") -> dict:
                 code="unsupported_certification",
                 field="certification_code",
                 message=f"`{certification_code}` is not enabled in this local application.",
-                hint="Use one of AI-901, AI-103 or AI-200.",
+                hint=(
+                    "Use one of "
+                    + ", ".join(item.code for item in CERTIFICATIONS[:-1])
+                    + f" or {CERTIFICATIONS[-1].code}."
+                ),
             ))
 
     domain = metadata.get("domain", "")
@@ -686,6 +690,6 @@ def _source_id(path: Path, root: Path, explicit_root: bool) -> str:
 
 def _corpus_roots() -> list[Path]:
     # Packaged builds separate the bundled demo from imports in app data.
-    if "AI103_USER_DATA_DIR" in os.environ:
+    if "QUIZ_MACHINE_USER_DATA_DIR" in os.environ:
         return [REFERENCE_DATA_DIR, USER_DATA_DIR]
     return [DATA_DIR]

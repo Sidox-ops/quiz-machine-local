@@ -7,7 +7,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     final backend = await LocalBackendManager.start();
-    runApp(Ai103QuizApp(backendSession: backend));
+    runApp(QuizMachineApp(backendSession: backend));
   } catch (exception) {
     runApp(_StartupFailureApp(message: exception.toString()));
   }

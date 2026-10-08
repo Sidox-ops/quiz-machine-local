@@ -1,5 +1,5 @@
-import 'package:ai103_quiz_ui/features/setup/data/environment_repository.dart';
-import 'package:ai103_quiz_ui/features/setup/domain/setup_models.dart';
+import 'package:quiz_machine_local/features/setup/data/environment_repository.dart';
+import 'package:quiz_machine_local/features/setup/domain/setup_models.dart';
 
 class FakeEnvironmentRepository implements EnvironmentRepository {
   static const readyDiagnostics = SystemDiagnostics(

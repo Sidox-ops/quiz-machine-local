@@ -69,7 +69,8 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
                     if (diagnostics?.modelSelectionLocked == true)
                       const _Notice(
                         icon: Icons.lock_outline,
-                        text: 'Selection is locked by AI103_LLM_MODEL. Change '
+                        text:
+                            'Selection is locked by QUIZ_MACHINE_LLM_MODEL. Change '
                             'that environment variable and restart the app to '
                             'use another model.',
                       )

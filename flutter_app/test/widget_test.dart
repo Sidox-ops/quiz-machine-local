@@ -1,10 +1,10 @@
-import 'package:ai103_quiz_ui/app/quiz_app.dart';
-import 'package:ai103_quiz_ui/core/runtime/local_backend_manager.dart';
-import 'package:ai103_quiz_ui/features/quiz/domain/quiz_models.dart';
-import 'package:ai103_quiz_ui/features/quiz/presentation/organisms/generation_panel.dart';
-import 'package:ai103_quiz_ui/features/quiz/presentation/pages/quiz_page.dart';
-import 'package:ai103_quiz_ui/features/setup/domain/setup_models.dart';
-import 'package:ai103_quiz_ui/features/setup/presentation/corpus_import_dialog.dart';
+import 'package:quiz_machine_local/app/quiz_app.dart';
+import 'package:quiz_machine_local/core/runtime/local_backend_manager.dart';
+import 'package:quiz_machine_local/features/quiz/domain/quiz_models.dart';
+import 'package:quiz_machine_local/features/quiz/presentation/organisms/generation_panel.dart';
+import 'package:quiz_machine_local/features/quiz/presentation/pages/quiz_page.dart';
+import 'package:quiz_machine_local/features/setup/domain/setup_models.dart';
+import 'package:quiz_machine_local/features/setup/presentation/corpus_import_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -293,7 +293,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      Ai103QuizApp(
+      QuizMachineApp(
         repository: FakeQuizRepository(),
         environmentRepository: FakeEnvironmentRepository(),
         acceptanceStore: _NeverAcceptedStore(),
@@ -311,7 +311,7 @@ void main() {
   });
 
   testWidgets('renders the session setup', (tester) async {
-    await tester.pumpWidget(Ai103QuizApp(repository: FakeQuizRepository()));
+    await tester.pumpWidget(QuizMachineApp(repository: FakeQuizRepository()));
     await tester.pumpAndSettle();
 
     expect(find.text('AI-103'), findsOneWidget);
@@ -327,7 +327,7 @@ void main() {
     tester,
   ) async {
     final repository = _DashboardRepository();
-    await tester.pumpWidget(Ai103QuizApp(repository: repository));
+    await tester.pumpWidget(QuizMachineApp(repository: repository));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Learning dashboard'));
@@ -363,7 +363,7 @@ void main() {
     tester,
   ) async {
     final repository = FakeQuizRepository();
-    await tester.pumpWidget(Ai103QuizApp(repository: repository));
+    await tester.pumpWidget(QuizMachineApp(repository: repository));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(DropdownButton<String>).first);
@@ -379,7 +379,7 @@ void main() {
   });
 
   testWidgets('completes the answer workflow', (tester) async {
-    await tester.pumpWidget(Ai103QuizApp(repository: FakeQuizRepository()));
+    await tester.pumpWidget(QuizMachineApp(repository: FakeQuizRepository()));
     await tester.pumpAndSettle();
 
     final startButton = find.widgetWithText(FilledButton, 'Start session');
@@ -410,7 +410,7 @@ void main() {
     'maps stable option ids to presentation letters after shuffling',
     (tester) async {
       await tester.pumpWidget(
-        Ai103QuizApp(repository: _ShuffledAnswerRepository()),
+        QuizMachineApp(repository: _ShuffledAnswerRepository()),
       );
       await tester.pumpAndSettle();
 
@@ -439,7 +439,7 @@ void main() {
   );
 
   testWidgets('renders generated case-study context', (tester) async {
-    await tester.pumpWidget(Ai103QuizApp(repository: FakeQuizRepository()));
+    await tester.pumpWidget(QuizMachineApp(repository: FakeQuizRepository()));
     await tester.pumpAndSettle();
 
     final cases = find.text('Cases');

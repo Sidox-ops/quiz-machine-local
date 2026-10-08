@@ -1,11 +1,19 @@
-import 'package:ai103_quiz_ui/app/quiz_app.dart';
+import 'package:quiz_machine_local/app/quiz_app.dart';
+import 'package:quiz_machine_local/core/design_system/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes/fake_quiz_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    final fontBytes = rootBundle.load('assets/fonts/Doto.ttf');
+    final brandFont = FontLoader('Doto')..addFont(fontBytes);
+    await brandFont.load();
+  });
 
   tearDown(() {
     TestWidgetsFlutterBinding.instance.platformDispatcher.clearAllTestValues();
@@ -16,7 +24,10 @@ void main() {
     tester.view.physicalSize = const Size(390, 844);
 
     await tester.pumpWidget(
-      Ai103QuizApp(repository: FakeQuizRepository()),
+      QuizMachineApp(
+        repository: FakeQuizRepository(),
+        theme: _previewTheme(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -31,7 +42,10 @@ void main() {
     tester.view.physicalSize = const Size(1440, 900);
 
     await tester.pumpWidget(
-      Ai103QuizApp(repository: FakeQuizRepository()),
+      QuizMachineApp(
+        repository: FakeQuizRepository(),
+        theme: _previewTheme(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -45,4 +59,12 @@ void main() {
       matchesGoldenFile('goldens/question_desktop.png'),
     );
   }, tags: 'golden');
+}
+
+ThemeData _previewTheme() {
+  final base = AppTheme.light;
+  return base.copyWith(
+    textTheme: base.textTheme.apply(fontFamily: 'Doto'),
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Doto'),
+  );
 }
