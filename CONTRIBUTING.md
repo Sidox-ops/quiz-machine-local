@@ -41,5 +41,10 @@ data. Use fakes and temporary directories for external or persistent behavior.
 - Update nearby documentation when behavior changes.
 - Run `git diff --check` and list the verification commands in the pull request.
 
+The `main` branch is protected. All changes must arrive through a pull request,
+pass the required CI and security checks, resolve review conversations, and be
+approved by the repository owner. `CODEOWNERS` makes that ownership explicit;
+opening a pull request never grants approval or merge access to a contributor.
+
 By submitting a contribution, you agree that it is licensed under the
 repository's `AGPL-3.0-only` licence and that you have the right to provide it.

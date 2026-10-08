@@ -1,17 +1,33 @@
-# Quiz Machine Local
+<p align="center">
+  <img src="docs/assets/readme-hero.png" alt="Local documents becoming a private quiz through an on-device model" width="100%">
+</p>
 
-[![CI](https://github.com/Sidox-ops/quiz-machine-local/actions/workflows/ci.yml/badge.svg)](https://github.com/Sidox-ops/quiz-machine-local/actions/workflows/ci.yml)
-[![Security](https://github.com/Sidox-ops/quiz-machine-local/actions/workflows/security.yml/badge.svg)](https://github.com/Sidox-ops/quiz-machine-local/actions/workflows/security.yml)
-[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg)](LICENSE)
+<h1 align="center">Quiz Machine Local</h1>
+
+<p align="center">
+  <strong>Turn trusted learning material into focused quizzes — locally.</strong>
+</p>
+
+<p align="center">
+  A local-first desktop study app powered by Flutter, FastAPI, Ollama and
+  Microsoft Learn.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Sidox-ops/quiz-machine-local/actions/workflows/ci.yml"><img src="https://github.com/Sidox-ops/quiz-machine-local/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/Sidox-ops/quiz-machine-local/actions/workflows/security.yml"><img src="https://github.com/Sidox-ops/quiz-machine-local/actions/workflows/security.yml/badge.svg" alt="Security status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0--only-0B6B68.svg" alt="AGPL-3.0-only licence"></a>
+  <img src="https://img.shields.io/badge/data-local--first-A94F24.svg" alt="Local-first data">
+  <img src="https://img.shields.io/badge/status-public%20alpha-52616B.svg" alt="Public alpha">
+</p>
 
 > **Public alpha:** the local-first architecture and core quiz pipeline are
 > tested, while signed desktop distribution and the broader model compatibility
 > matrix are still being expanded. See [known limitations](docs/COMPATIBILITY.md).
 
 Quiz Machine Local is an open-source desktop study application for Microsoft
-AI certifications. It combines a Flutter interface, a loopback-only FastAPI
-backend, Ollama models running on the user's computer, and certification-scoped
-Microsoft Learn retrieval.
+AI certifications. It turns certification-scoped learning material into
+validated practice sessions using a model that already runs on your computer.
 
 The application currently supports AI-901, AI-103, and AI-200. It requires no
 account and includes no advertising, analytics, or publisher-operated backend.
@@ -23,11 +39,20 @@ endorsed by, sponsored by, or an official product of Microsoft or any
 certification provider. It does not contain official exam questions and cannot
 guarantee an exam result.
 
-## Preview
+## Why local?
 
-| Setup and local checks | Prepared quiz session |
-| --- | --- |
-| ![Quiz Machine setup on a mobile-width window](flutter_app/test/goldens/setup_mobile.png) | ![Quiz Machine question workspace](flutter_app/test/goldens/question_desktop.png) |
+| Local model | Prepared sessions | Explicit boundaries |
+| :--- | :--- | :--- |
+| Use a compatible Ollama model already installed on the machine. Nothing is downloaded silently. | Questions are generated, checked and stored before revision starts. No waiting on the model after each answer. | Learner answers, scores, imported corpora and progress remain local in the supported configuration. |
+
+## Product preview
+
+<p align="center">
+  <img src="flutter_app/test/goldens/question_desktop.png" alt="Quiz Machine question workspace" width="74%">
+  <img src="flutter_app/test/goldens/setup_mobile.png" alt="Quiz Machine setup and local checks" width="22%">
+</p>
+
+<p align="center"><sub>Desktop quiz workspace and responsive onboarding.</sub></p>
 
 ## What it does
 
@@ -50,6 +75,28 @@ derived only from presentation order. The canonical question is frozen before
 its explanation is generated, and the final artifact is checked again before
 display and scoring.
 
+## How it fits together
+
+```mermaid
+flowchart LR
+    U["Learner"] --> F["Flutter desktop app"]
+    F -->|"loopback HTTP + token"| B["FastAPI backend"]
+    B --> Q["Validated question bank"]
+    B --> P["Local progress"]
+    B -->|"generation & validation"| O["Local Ollama model"]
+    B -->|"public documentation only"| M["Microsoft Learn MCP"]
+
+    classDef local fill:#e2f1ef,stroke:#0b6b68,color:#161a1b;
+    classDef external fill:#fff1e8,stroke:#a94f24,color:#161a1b;
+    class U,F,B,Q,P,O local;
+    class M external;
+```
+
+Flutter presents state and user intent. The backend owns retrieval, generation,
+validation, correctness and persistence. Ollama stays behind one provider
+boundary, and packaged builds expose the backend only on loopback with a random
+token. See the full [architecture guide](docs/ARCHITECTURE.md).
+
 ## Installation status
 
 There is currently no stable end-user release. Source builds are available now;
@@ -58,7 +105,9 @@ signed installers will appear on the
 after the first release candidate passes clean-machine verification. Do not use
 binary downloads from third-party mirrors.
 
-## Requirements for source builds
+## Quick start
+
+### Requirements
 
 - macOS or Windows for the supported desktop experience;
 - Python 3.10 or newer;
@@ -81,9 +130,10 @@ Model and platform expectations are documented in
 The legacy offline AI-103 mode additionally requires `nomic-embed-text` by
 default. That embedding model must also be installed explicitly before launch.
 
-## Run locally
+### Run locally
 
-Check the existing toolchain and start the complete development stack:
+Check the existing toolchain, prepare the source build and launch the complete
+development stack:
 
 ```bash
 ./scripts/doctor.sh
@@ -96,7 +146,8 @@ launches Flutter. Onboarding then verifies Ollama, lets the user select an
 installed generation model, and checks the Microsoft Learn connection. Neither
 `start.sh` nor onboarding downloads Ollama models.
 
-To run the services separately:
+<details>
+<summary><strong>Run the backend and Flutter separately</strong></summary>
 
 ```bash
 ./run_backend.sh
@@ -106,6 +157,11 @@ cd flutter_app
 flutter pub get
 flutter run -d macos
 ```
+
+</details>
+
+<details>
+<summary><strong>Windows source build</strong></summary>
 
 Native Windows source builds use PowerShell and the Windows Flutter desktop
 toolchain. Generate the runner once from Git Bash, then launch the app:
@@ -120,6 +176,8 @@ flutter run -d windows
 The repository currently provides `run_backend.sh`, so Windows contributors may
 also start it from Git Bash. A native PowerShell launcher is tracked on the
 [roadmap](ROADMAP.md).
+
+</details>
 
 ## Data and network boundaries
 
@@ -163,7 +221,7 @@ The tests use fakes for Ollama and Microsoft Learn. They do not download models
 or alter a real user corpus. A separate scheduled workflow performs a bounded
 live contract check against the public Microsoft Learn MCP endpoint.
 
-## Repository layout
+## Project map
 
 ```text
 backend/        local FastAPI API, corpus pipeline, RAG, quiz engine and stores
@@ -183,6 +241,10 @@ state, builds, releases, and Graphify indexes are intentionally excluded.
 Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request. Keep
 changes local-first: no hosted account dependency, telemetry, secret, copied
 exam content, or unlicensed training material belongs in this repository.
+Every change to `main` goes through a pull request, automated checks and owner
+review. Contributors can propose freely; repository approval and merge access
+remain with the maintainer.
+
 For help and public maintenance expectations, read [`SUPPORT.md`](SUPPORT.md).
 Planned work is listed in [`ROADMAP.md`](ROADMAP.md), and release-facing changes
 are recorded in [`CHANGELOG.md`](CHANGELOG.md).
