@@ -12,11 +12,11 @@ ollama serve
 ./start.sh
 ```
 
-The workspace offers AI-901, AI-103, AI-200, AI-300 and AI-500. Microsoft
-Learn MCP supplies official scoped evidence; imported notes supplement it and
-remain on this computer. During onboarding, select one of the local generation
-models already installed in Ollama. Quiz Machine does not download a model
-automatically.
+The workspace offers AI-901, AI-103, AI-200, AI-300, AI-500, AB-100, DP-600
+and DP-700. Microsoft Learn MCP supplies official scoped evidence; imported
+notes supplement it and remain on this computer. During onboarding, select one
+of the local generation models already installed in Ollama. Quiz Machine does
+not download a model automatically.
 
 ## 2. Choose material you may use
 
@@ -31,7 +31,8 @@ rules are:
 
 1. keep the `quiz-machine-corpus/v1` frontmatter block at the first line;
 2. give the file a unique lowercase `document_id`;
-3. choose `AI-901`, `AI-103`, `AI-200`, `AI-300` or `AI-500`;
+3. choose `AI-901`, `AI-103`, `AI-200`, `AI-300`, `AI-500`, `AB-100`,
+   `DP-600` or `DP-700`;
 4. copy an exact domain name shown by the application;
 5. make the single `#` heading identical to `title`;
 6. put factual study content under one or more non-empty `##` sections.
@@ -61,10 +62,10 @@ domain-specific session. When a local chunk is relevant, the question context
 contains one local chunk plus up to two official Microsoft Learn chunks. The
 app never sends more than three evidence chunks to Ollama.
 
-The source coverage panel labels this mode **Microsoft Learn + local corpora**.
-If MCP is temporarily unavailable, a correctly scoped local corpus remains a
-fallback. Set `QUIZ_MACHINE_KNOWLEDGE_PROVIDER=local` only when you
-intentionally want the legacy offline AI-103 mode.
+The setup card labels this mode **Microsoft Learn + imported notes**. If MCP is
+temporarily unavailable, a correctly scoped local corpus remains a fallback.
+Set `QUIZ_MACHINE_KNOWLEDGE_PROVIDER=local` only when you intentionally want the
+legacy offline AI-103 mode.
 
 ## Repository boundaries
 

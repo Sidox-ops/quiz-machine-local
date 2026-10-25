@@ -6,7 +6,8 @@ Quiz Machine Local uses the public Microsoft Learn MCP service by default to
 prepare a certification corpus. It never treats a raw search result as a trusted
 answer and never calls MCP while the learner is answering a prepared question.
 
-For AI-901, AI-103, AI-200, AI-300, or AI-500, the preparation job:
+For AI-901, AI-103, AI-200, AI-300, AI-500, AB-100, DP-600, or DP-700, the
+preparation job:
 
 1. fetches the official study guide and derives its measured domains and
    objectives;

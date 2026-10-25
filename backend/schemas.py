@@ -122,7 +122,7 @@ class CanonicalQuestion(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     question_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
-    certification_code: str = Field(pattern=r"^AI-[0-9]{3}$")
+    certification_code: str = Field(pattern=r"^[A-Z]{2}-[0-9]{3}$")
     learning_objective: str = Field(min_length=1, max_length=300)
     question_type: QuestionType
     case_study: CaseStudyContext | None = None
@@ -180,7 +180,10 @@ class PublicQuestion(BaseModel):
 
 
 class NextQuestionRequest(BaseModel):
-    certification_code: str = Field(default="AI-103", pattern=r"^AI-[0-9]{3}$")
+    certification_code: str = Field(
+        default="AI-103",
+        pattern=r"^[A-Z]{2}-[0-9]{3}$",
+    )
     mode: SelectionMode = "shuffle"
     domain: str | None = None
     chapter_id: str | None = None
@@ -256,7 +259,7 @@ class ProgressResetRequest(BaseModel):
     scope: ProgressResetScope
     certification_code: str | None = Field(
         default=None,
-        pattern=r"^AI-[0-9]{3}$",
+        pattern=r"^[A-Z]{2}-[0-9]{3}$",
     )
 
 

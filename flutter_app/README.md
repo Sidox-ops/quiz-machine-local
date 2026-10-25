@@ -11,8 +11,7 @@ generates missing platform files, and launches the desktop app. Onboarding lists
 compatible generation models already installed in Ollama, recommends the largest
 one, and asks the user to choose before checking Microsoft Learn. It never
 downloads a model. The quiz setup then lets you choose AI-901, AI-103, AI-200,
-AI-300, or AI-500
-before generating local QCMs.
+AI-300, AI-500, AB-100, DP-600, or DP-700 before generating local QCMs.
 
 Use the **Local model** action in the top bar to switch models for future
 generation. Prepared sessions and validated questions are preserved. A launch

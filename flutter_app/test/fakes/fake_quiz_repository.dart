@@ -37,12 +37,32 @@ class FakeQuizRepository implements QuizRepository {
           title: 'Designing and Implementing Multi-Agent AI Solutions',
           studyGuideUrl: 'https://learn.microsoft.com/ai-500',
         ),
+        CertificationItem(
+          code: 'AB-100',
+          title: 'Agentic AI Business Solutions Architect',
+          studyGuideUrl: 'https://learn.microsoft.com/ab-100',
+        ),
+        CertificationItem(
+          code: 'DP-600',
+          title: 'Implementing Analytics Solutions Using Microsoft Fabric',
+          studyGuideUrl: 'https://learn.microsoft.com/dp-600',
+        ),
+        CertificationItem(
+          code: 'DP-700',
+          title:
+              'Implementing Data Engineering Solutions Using Microsoft Fabric',
+          studyGuideUrl: 'https://learn.microsoft.com/dp-700',
+        ),
       ],
       selectedCertificationCode: selected,
       knowledgeProvider: 'microsoft_learn_mcp',
-      domains: selected == 'AI-901'
-          ? const ['Identify AI concepts and capabilities']
-          : const ['Plan and manage an Azure AI solution'],
+      domains: switch (selected) {
+        'AI-901' => const ['Identify AI concepts and capabilities'],
+        'AB-100' => const ['Plan AI-powered business solutions'],
+        'DP-600' => const ['Maintain a data analytics solution'],
+        'DP-700' => const ['Implement and manage an analytics solution'],
+        _ => const ['Plan and manage an Azure AI solution'],
+      },
       coverage: const CorpusCoverage(
         complete: true,
         expectedSources: 1,

@@ -35,7 +35,8 @@ Required frontmatter fields:
 - `schema`: exactly `quiz-machine-corpus/v1`;
 - `document_id`: 3 to 80 lowercase letters, digits, dots, underscores or
   hyphens; it is also the stable local filename and must be unique;
-- `certification_code`: `AI-901`, `AI-103`, `AI-200`, `AI-300` or `AI-500`;
+- `certification_code`: `AI-901`, `AI-103`, `AI-200`, `AI-300`, `AI-500`,
+  `AB-100`, `DP-600` or `DP-700`;
 - `domain`: exactly one domain configured for that certification;
 - `title`: must exactly match the single level-1 heading in the body;
 - `language`: a short human-readable language code or name.

@@ -87,6 +87,45 @@ CERTIFICATIONS = (
             "Secure, govern, and deploy multi-agent solutions",
         ),
     ),
+    LocalCertification(
+        code="AB-100",
+        title="Agentic AI Business Solutions Architect",
+        study_guide_url=(
+            "https://learn.microsoft.com/credentials/certifications/"
+            "resources/study-guides/ab-100"
+        ),
+        domains=(
+            "Plan AI-powered business solutions",
+            "Design AI-powered business solutions",
+            "Deploy AI-powered business solutions",
+        ),
+    ),
+    LocalCertification(
+        code="DP-600",
+        title="Implementing Analytics Solutions Using Microsoft Fabric",
+        study_guide_url=(
+            "https://learn.microsoft.com/credentials/certifications/"
+            "resources/study-guides/dp-600"
+        ),
+        domains=(
+            "Maintain a data analytics solution",
+            "Prepare data",
+            "Implement and manage semantic models",
+        ),
+    ),
+    LocalCertification(
+        code="DP-700",
+        title="Implementing Data Engineering Solutions Using Microsoft Fabric",
+        study_guide_url=(
+            "https://learn.microsoft.com/credentials/certifications/"
+            "resources/study-guides/dp-700"
+        ),
+        domains=(
+            "Implement and manage an analytics solution",
+            "Ingest and transform data",
+            "Monitor and optimize an analytics solution",
+        ),
+    ),
 )
 
 _BY_CODE = {item.code: item for item in CERTIFICATIONS}

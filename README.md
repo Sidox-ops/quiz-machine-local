@@ -26,10 +26,10 @@
 > matrix are still being expanded. See [known limitations](docs/COMPATIBILITY.md).
 
 Quiz Machine Local is an open-source desktop study application for Microsoft
-AI certifications. It turns certification-scoped learning material into
+certifications. It turns certification-scoped learning material into
 validated practice sessions using a model that already runs on your computer.
 
-The application currently supports five Microsoft AI certification paths. It
+The application currently supports eight Microsoft certification paths. It
 requires no account and includes no advertising, analytics, or
 publisher-operated backend.
 Imported corpora, generated questions, answers, and learning progress remain on
@@ -42,6 +42,9 @@ the user's computer in the supported configuration.
 | [AI-200](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-200) | Developing cloud-native AI solutions on Azure |
 | [AI-300](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-300) | Operationalizing machine learning and generative AI |
 | [AI-500](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-500) | Designing and implementing production multi-agent systems |
+| [AB-100](https://learn.microsoft.com/credentials/certifications/resources/study-guides/ab-100) | Architecting agentic AI business solutions |
+| [DP-600](https://learn.microsoft.com/credentials/certifications/resources/study-guides/dp-600) | Implementing analytics solutions with Microsoft Fabric |
+| [DP-700](https://learn.microsoft.com/credentials/certifications/resources/study-guides/dp-700) | Implementing data engineering solutions with Microsoft Fabric |
 
 Quiz Machine is an independent educational tool. It is not affiliated with,
 endorsed by, sponsored by, or an official product of Microsoft or any
