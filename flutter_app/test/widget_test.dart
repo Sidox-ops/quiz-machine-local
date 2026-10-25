@@ -316,8 +316,15 @@ void main() {
 
     expect(find.text('AI-103'), findsOneWidget);
     expect(find.text('Practice session'), findsOneWidget);
-    expect(find.text('1/1 corpora indexed'), findsOneWidget);
-    expect(find.text('1/1 chunks • Ready locally'), findsOneWidget);
+    expect(find.text('Official Microsoft Learn grounding'), findsOneWidget);
+    expect(
+      find.text(
+        'Certification-scoped official evidence is prepared before the session; question generation stays local.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('corpora indexed'), findsNothing);
+    expect(find.textContaining('chunks •'), findsNothing);
     expect(find.text('Start session'), findsOneWidget);
 
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
@@ -369,13 +376,17 @@ void main() {
     await tester.tap(find.byType(DropdownButton<String>).first);
     await tester.pumpAndSettle();
     await tester.tap(
-      find.text('AI-901 — Microsoft Azure AI Fundamentals').last,
+      find
+          .text(
+            'DP-600 — Implementing Analytics Solutions Using Microsoft Fabric',
+          )
+          .last,
     );
     await tester.pumpAndSettle();
 
-    expect(repository.lastCatalogCertificationCode, 'AI-901');
-    expect(find.text('AI-901'), findsOneWidget);
-    expect(find.text('Identify AI concepts and capabilities'), findsNothing);
+    expect(repository.lastCatalogCertificationCode, 'DP-600');
+    expect(find.text('DP-600'), findsOneWidget);
+    expect(find.text('Maintain a data analytics solution'), findsNothing);
   });
 
   testWidgets('completes the answer workflow', (tester) async {

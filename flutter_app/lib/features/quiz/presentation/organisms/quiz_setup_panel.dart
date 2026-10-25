@@ -47,22 +47,16 @@ class QuizSetupPanel extends StatelessWidget {
           Card(
             margin: EdgeInsets.zero,
             child: ListTile(
-              leading: Icon(
-                viewModel.catalog.knowledgeProvider == 'hybrid'
-                    ? Icons.hub_outlined
-                    : Icons.school_outlined,
-              ),
+              leading: const Icon(Icons.verified_outlined),
               title: Text(
                 viewModel.catalog.knowledgeProvider == 'hybrid'
-                    ? 'Compact corpus + imported Markdown'
-                    : 'Compact Microsoft Learn corpus',
+                    ? 'Microsoft Learn + imported notes'
+                    : 'Official Microsoft Learn grounding',
               ),
               subtitle: Text(
                 viewModel.catalog.knowledgeProvider == 'hybrid'
-                    ? 'Imported material is included when it maps to an objective; question generation stays local.'
-                    : viewModel.catalog.coverage.complete
-                        ? 'Prepared locally; Microsoft Learn is not queried while questions are generated.'
-                        : 'Prepared automatically from Microsoft Learn before the first session.',
+                    ? 'Official evidence and scoped notes are prepared before the session; question generation stays local.'
+                    : 'Certification-scoped official evidence is prepared before the session; question generation stays local.',
               ),
             ),
           ),
@@ -93,10 +87,6 @@ class QuizSetupPanel extends StatelessWidget {
                 : (selection) => viewModel.setMode(selection.first),
           ),
         ),
-        if (viewModel.catalog.sources.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.md),
-          _CorpusCoveragePanel(catalog: viewModel.catalog),
-        ],
         if (viewModel.mode == QuizMode.domain) ...[
           const SizedBox(height: AppSpacing.lg),
           LabeledControl(
@@ -193,64 +183,6 @@ class QuizSetupPanel extends StatelessWidget {
           label: const Text('Start session'),
         ),
       ],
-    );
-  }
-}
-
-class _CorpusCoveragePanel extends StatelessWidget {
-  const _CorpusCoveragePanel({required this.catalog});
-
-  final QuizCatalog catalog;
-
-  @override
-  Widget build(BuildContext context) {
-    final coverage = catalog.coverage;
-    final colors = Theme.of(context).colorScheme;
-    final statusColor = coverage.complete ? colors.primary : colors.error;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: ExpansionTile(
-        leading: Icon(
-          coverage.complete
-              ? Icons.verified_outlined
-              : Icons.warning_amber_rounded,
-          color: statusColor,
-        ),
-        title: Text(
-          '${coverage.indexedSources}/${coverage.expectedSources} '
-          'corpora indexed',
-        ),
-        subtitle: Text(
-          '${coverage.indexedChunks}/${coverage.expectedChunks} chunks • '
-          '${coverage.complete ? 'Ready locally' : 'Prepared at session start'}',
-        ),
-        children: catalog.sources
-            .map(
-              (source) => ListTile(
-                dense: true,
-                leading: Icon(
-                  source.isExcluded
-                      ? Icons.block_outlined
-                      : source.isCurrent
-                          ? Icons.check_circle_outline
-                          : Icons.error_outline,
-                  color: source.isExcluded
-                      ? colors.onSurfaceVariant
-                      : source.isCurrent
-                          ? colors.primary
-                          : colors.error,
-                ),
-                title: Text(source.title),
-                subtitle: Text(
-                  source.isExcluded
-                      ? 'Excluded • ${source.reason}'
-                      : '${source.indexedChunks}/${source.expectedChunks} chunks'
-                          '${source.chapterCount == 0 ? '' : ' • ${source.chapterCount} chapters'}',
-                ),
-              ),
-            )
-            .toList(growable: false),
-      ),
     );
   }
 }
